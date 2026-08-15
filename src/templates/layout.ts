@@ -24,6 +24,7 @@ const NAV_BY_ROLE: Record<Role, { section: string; items: { href: string; label:
         { href: "/banco", label: "Vista global", icon: "◆" },
         { href: "/banco/facturas", label: "Facturas a fondear", icon: "▤" },
         { href: "/banco/cartera", label: "Cartera activa", icon: "▥" },
+        { href: "/banco/monitoreo", label: "Monitoreo de fondeo", icon: "▦" },
       ],
     },
     {

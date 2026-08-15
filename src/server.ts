@@ -31,6 +31,7 @@ import {
   invitarProveedor,
   recalcularScoring,
 } from "./lib/data.js";
+import { bancoMonitoreoPage } from "./templates/bancoMonitoreo.js";
 import { landingPage } from "./templates/landing.js";
 import { loginPage } from "./templates/login.js";
 import { bancoDashboard } from "./templates/dashboardBanco.js";
@@ -416,6 +417,15 @@ const server = http.createServer(async (req, res) => {
       if (!session) return;
       recalcularScoring();
       redirect(res, `/banco/scoring?toast=${encodeURIComponent("Scores recalculados sobre toda la cartera.")}`);
+      return;
+    }
+
+    // --- Banco · monitoreo de fondeo (dashboard de desembolsos) ---
+    if (pathname === "/banco/monitoreo" && method === "GET") {
+      const session = requireRole(req, res, "banco");
+      if (!session) return;
+      const user = findUserByEmail("mesa@fondossa.com.ar")!;
+      send(res, 200, bancoMonitoreoPage({ user, toast }));
       return;
     }
 

@@ -407,6 +407,34 @@ export const facturas: Factura[] = [
     diasDescuento: 33,
     moneda: "ARS",
   }),
+  factura({
+    id: "fac-0018",
+    numero: "FC-V-00000544",
+    pagadorId: "pagador-valemin",
+    proveedorId: "proveedor-agropampeanos",
+    montoBruto: 8_500_000,
+    fechaEmision: "2026-07-22",
+    fechaVencimiento: "2026-08-26",
+    estado: "financiada",
+    scoreRiesgo: 78,
+    tasaAnual: 47.5,
+    diasDescuento: 26,
+    moneda: "ARS",
+  }),
+  factura({
+    id: "fac-0019",
+    numero: "FC-T-00000175",
+    pagadorId: "pagador-ternium",
+    proveedorId: "proveedor-servitech",
+    montoBruto: 4_700_000,
+    fechaEmision: "2026-06-25",
+    fechaVencimiento: "2026-07-18",
+    estado: "cobrada",
+    scoreRiesgo: 74,
+    tasaAnual: 49.0,
+    diasDescuento: 22,
+    moneda: "ARS",
+  }),
 ];
 
 export function findUserByEmail(email: string): User | undefined {
@@ -643,4 +671,84 @@ export function recalcularScoring() {
     f.scoreRiesgo = Math.max(1, Math.min(99, f.scoreRiesgo + delta));
   }
   ultimoRecalculoScoring = new Date().toISOString();
+}
+
+// ---------------------------------------------------------------------------
+// Monitoreo de fondeo — desembolsos históricos (financiada + cobrada)
+// ---------------------------------------------------------------------------
+
+export function facturasDesembolsadas(): Factura[] {
+  return facturas.filter((f) => ["financiada", "cobrada"].includes(f.estado));
+}
+
+export interface DesembolsoPorGrupo {
+  clave: string;
+  monto: number;
+  operaciones: number;
+}
+
+export function desembolsoPorIndustria(): DesembolsoPorGrupo[] {
+  const grupos = new Map<string, DesembolsoPorGrupo>();
+  for (const f of facturasDesembolsadas()) {
+    const sector = getEmpresa(f.pagadorId)?.sector ?? "Sin sector";
+    const g = grupos.get(sector) ?? { clave: sector, monto: 0, operaciones: 0 };
+    g.monto += f.montoNeto;
+    g.operaciones += 1;
+    grupos.set(sector, g);
+  }
+  return [...grupos.values()].sort((a, b) => b.monto - a.monto);
+}
+
+export function desembolsoPorProveedor(): DesembolsoPorGrupo[] {
+  const grupos = new Map<string, DesembolsoPorGrupo>();
+  for (const f of facturasDesembolsadas()) {
+    const nombre = getEmpresa(f.proveedorId)?.nombre ?? "—";
+    const g = grupos.get(nombre) ?? { clave: nombre, monto: 0, operaciones: 0 };
+    g.monto += f.montoNeto;
+    g.operaciones += 1;
+    grupos.set(nombre, g);
+  }
+  return [...grupos.values()].sort((a, b) => b.monto - a.monto);
+}
+
+export function desembolsoPorPagador(): DesembolsoPorGrupo[] {
+  const grupos = new Map<string, DesembolsoPorGrupo>();
+  for (const f of facturasDesembolsadas()) {
+    const nombre = getEmpresa(f.pagadorId)?.nombre ?? "—";
+    const g = grupos.get(nombre) ?? { clave: nombre, monto: 0, operaciones: 0 };
+    g.monto += f.montoNeto;
+    g.operaciones += 1;
+    grupos.set(nombre, g);
+  }
+  return [...grupos.values()].sort((a, b) => b.monto - a.monto);
+}
+
+const TRAMOS_MONTO: [string, number, number][] = [
+  ["< 5M", 0, 5_000_000],
+  ["5M – 10M", 5_000_000, 10_000_000],
+  ["10M – 20M", 10_000_000, 20_000_000],
+  ["≥ 20M", 20_000_000, Infinity],
+];
+
+export function desembolsoPorTramoMonto(): DesembolsoPorGrupo[] {
+  return TRAMOS_MONTO.map(([clave, lo, hi]) => {
+    const enTramo = facturasDesembolsadas().filter((f) => f.montoBruto >= lo && f.montoBruto < hi);
+    return {
+      clave,
+      monto: enTramo.reduce((acc, f) => acc + f.montoNeto, 0),
+      operaciones: enTramo.length,
+    };
+  });
+}
+
+export function desembolsoPorMes(): DesembolsoPorGrupo[] {
+  const grupos = new Map<string, DesembolsoPorGrupo>();
+  for (const f of facturasDesembolsadas()) {
+    const mes = f.fechaEmision.slice(0, 7); // YYYY-MM
+    const g = grupos.get(mes) ?? { clave: mes, monto: 0, operaciones: 0 };
+    g.monto += f.montoNeto;
+    g.operaciones += 1;
+    grupos.set(mes, g);
+  }
+  return [...grupos.values()].sort((a, b) => a.clave.localeCompare(b.clave));
 }
