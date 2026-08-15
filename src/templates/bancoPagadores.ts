@@ -86,7 +86,7 @@ export function bancoPagadoresPage(opts: { user: User; toast?: string }): string
   return dashboardShell({
     role: "banco",
     user: opts.user,
-    empresaNombre: "Banco Piano",
+    empresaNombre: "Fondos S.A.",
     activeHref: "/banco/pagadores",
     pageTitle: "Pagadores ancla",
     content,

@@ -59,7 +59,7 @@ export function proveedorDashboard(opts: {
       <div class="kpi-card">
         <div class="label">En trámite de fondeo</div>
         <div class="value">${enTramite.length}</div>
-        <div class="delta delta-flat">esperando aprobación de Banco Piano</div>
+        <div class="delta delta-flat">esperando aprobación de Fondos S.A.</div>
       </div>
       <div class="kpi-card">
         <div class="label">Ya cobradas / financiadas</div>
@@ -82,7 +82,7 @@ export function proveedorDashboard(opts: {
       <div class="panel-header">
         <div>
           <h2>Facturas elegibles para anticipo</h2>
-          <p>Ya tienen la conformidad de AgroExport Pampa. Elegí cuáles descontar hoy.</p>
+          <p>Ya tienen la conformidad de YPF. Elegí cuáles descontar hoy.</p>
         </div>
       </div>
       ${
@@ -102,7 +102,7 @@ export function proveedorDashboard(opts: {
       <div class="panel-header">
         <div>
           <h2>En trámite de fondeo</h2>
-          <p>Ya pediste el anticipo — esperando la aprobación de Banco Piano.</p>
+          <p>Ya pediste el anticipo — esperando la aprobación de Fondos S.A..</p>
         </div>
       </div>
       ${
@@ -116,15 +116,15 @@ export function proveedorDashboard(opts: {
     </div>
 
     <p class="footnote">
-      Vista de demostración — Metalúrgica Sur SRL. El anticipo se acredita en la cuenta registrada del
-      proveedor una vez que Banco Piano aprueba el fondeo. Datos y tasas simulados.
+      Vista de demostración — Errázuriz S.A.. El anticipo se acredita en la cuenta registrada del
+      proveedor una vez que Fondos S.A. aprueba el fondeo. Datos y tasas simulados.
     </p>
   `;
 
   return dashboardShell({
     role: "proveedor",
     user: opts.user,
-    empresaNombre: "Metalúrgica Sur SRL",
+    empresaNombre: "Errázuriz S.A.",
     activeHref: "/proveedor",
     pageTitle: "Inicio — liquidez",
     content,

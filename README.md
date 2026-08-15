@@ -3,7 +3,7 @@
 MVP navegable de la plataforma de Supply Chain Finance / factoring: **3 portales**
 (banco/fondo, empresa ancla, proveedor) conectados por un mismo ciclo de vida de
 factura. Pensado para mostrar la operatoria completa a stakeholders — incluido
-Banco Piano — antes de construir integraciones reales.
+Fondos S.A. — antes de construir integraciones reales.
 
 ## Qué incluye esta iteración
 
@@ -13,10 +13,10 @@ Banco Piano — antes de construir integraciones reales.
   backlog de historias de usuario original.
 - Dashboard funcional por rol, con datos que **se actualizan en vivo y cruzan entre
   portales** (no son pantallas estáticas):
-  - **Banco Piano** — cola de aprobación de fondeo, cartera activa, aprobar/rechazar.
-  - **AgroExport Pampa (empresa ancla)** — facturas pendientes de conformidad, ciclo en curso.
-  - **Metalúrgica Sur (proveedor)** — cuánto puede cobrar hoy, pedir anticipo.
-- Portal del Fondo (Banco Piano) ya completo para las historias P1/P2 de la épica E2:
+  - **Fondos S.A.** — cola de aprobación de fondeo, cartera activa, aprobar/rechazar.
+  - **YPF (empresa ancla)** — facturas pendientes de conformidad, ciclo en curso.
+  - **Errázuriz S.A. (proveedor)** — cuánto puede cobrar hoy, pedir anticipo.
+- Portal del Fondo (Fondos S.A.) ya completo para las historias P1/P2 de la épica E2:
   - **Explorador maestro de facturas** (`/banco/facturas`) — filtros, paginación, export CSV real
     y acciones de intervención manual (revisión L2, bloqueo anti-fraude, override aprobar/rechazar).
   - **Cartera activa** (`/banco/cartera`) — total vigente, concentración por pagador con gráfico
@@ -26,9 +26,9 @@ Banco Piano — antes de construir integraciones reales.
   - **Proveedores** (`/banco/proveedores`) — CRM con nivel KYB, pagadores asociados, alertas, e
     invitación de nuevos proveedores (`/banco/proveedores/invitar`).
   - **Scoring** (`/banco/scoring`) — distribución de scores, ranking por entidad y "Recalcular ahora".
-  - El modelo de datos ahora tiene 5 pagadores y 6 proveedores (antes 1 y 1) para que estas vistas
-    de cartera/CRM tengan volumen realista — el circuito de demo original (AgroExport ↔ Metalúrgica
-    Sur) sigue intacto.
+  - El modelo de datos ahora tiene 4 pagadores y 6 proveedores (antes 1 y 1) para que estas vistas
+    de cartera/CRM tengan volumen realista — el circuito de demo original (YPF ↔ Errázuriz S.A.)
+    sigue intacto.
 - El resto de los ítems del menú (`Límites`, `Equipo`, etc.) siguen como placeholder — quedan
   para la próxima iteración, no rompen la navegación.
 
@@ -52,9 +52,9 @@ las veces que haga falta desde el mismo estado inicial.
 
 | Portal | Email | Contraseña |
 |---|---|---|
-| Banco Piano | `mesa@bancopiano.com.ar` | `demo1234` |
-| AgroExport Pampa (ancla) | `finanzas@agroexportpampa.com.ar` | `demo1234` |
-| Metalúrgica Sur (proveedor) | `pagos@metalurgicasur.com.ar` | `demo1234` |
+| Fondos S.A. | `mesa@fondossa.com.ar` | `demo1234` |
+| YPF (ancla) | `finanzas@ypf.com.ar` | `demo1234` |
+| Errázuriz S.A. (proveedor) | `pagos@errazuriz.com.ar` | `demo1234` |
 
 Los campos de login ya vienen precargados con estos datos para agilizar la demo.
 

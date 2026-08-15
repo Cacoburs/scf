@@ -8,31 +8,20 @@ import type { Empresa, Factura, User } from "./types.js";
 export const empresas: Empresa[] = [
   {
     id: "banco-piano",
-    nombre: "Banco Piano",
+    nombre: "Fondos S.A.",
     cuit: "30-50001199-3",
     tipo: "banco",
-    logoIniciales: "BP",
+    logoIniciales: "FS",
   },
 
   // --- Pagadores ancla ---
   {
     id: "pagador-agroexport",
-    nombre: "AgroExport Pampa S.A.",
-    cuit: "30-71234567-2",
-    tipo: "pagador",
-    sector: "Agroindustria exportadora",
-    logoIniciales: "AP",
-    lifecyclePagador: "activo",
-    ejecutivo: "Martín Prieto",
-    limiteExposicion: 40_000_000,
-  },
-  {
-    id: "pagador-ypf",
-    nombre: "YPF Combustibles S.A.",
+    nombre: "YPF S.A.",
     cuit: "30-52345671-8",
     tipo: "pagador",
     sector: "Energía",
-    logoIniciales: "YC",
+    logoIniciales: "YP",
     lifecyclePagador: "activo",
     ejecutivo: "Sofía Larrea",
     limiteExposicion: 80_000_000,
@@ -75,11 +64,11 @@ export const empresas: Empresa[] = [
   // --- Proveedores cedentes ---
   {
     id: "proveedor-metalurgica",
-    nombre: "Metalúrgica Sur SRL",
+    nombre: "Errázuriz S.A.",
     cuit: "30-70987654-1",
     tipo: "proveedor",
     sector: "Autopartes e insumos industriales",
-    logoIniciales: "MS",
+    logoIniciales: "EZ",
     lifecycleProveedor: "activo",
     kyb: "L2",
   },
@@ -124,7 +113,7 @@ export const empresas: Empresa[] = [
     logoIniciales: "RS",
     lifecycleProveedor: "dormant",
     kyb: "L2",
-    pagadoresIds: ["pagador-ypf"],
+    pagadoresIds: ["pagador-agroexport"],
     alertas: ["Sin actividad hace 45+ días"],
   },
   {
@@ -144,16 +133,16 @@ export const empresas: Empresa[] = [
 export const users: User[] = [
   {
     id: "u-banco-1",
-    email: "mesa@bancopiano.com.ar",
+    email: "mesa@fondossa.com.ar",
     password: "demo1234",
     role: "banco",
     nombre: "Lucía Fernández",
-    cargo: "Mesa de Fondeo — Banco Piano",
+    cargo: "Mesa de Fondeo — Fondos S.A.",
     empresaId: "banco-piano",
   },
   {
     id: "u-pagador-1",
-    email: "finanzas@agroexportpampa.com.ar",
+    email: "finanzas@ypf.com.ar",
     password: "demo1234",
     role: "pagador",
     nombre: "Martín Suárez",
@@ -162,7 +151,7 @@ export const users: User[] = [
   },
   {
     id: "u-proveedor-1",
-    email: "pagos@metalurgicasur.com.ar",
+    email: "pagos@errazuriz.com.ar",
     password: "demo1234",
     role: "proveedor",
     nombre: "Carla Gómez",
@@ -265,7 +254,7 @@ export const facturas: Factura[] = [
   factura({
     id: "fac-0007",
     numero: "FC-Y-00019921",
-    pagadorId: "pagador-ypf",
+    pagadorId: "pagador-agroexport",
     proveedorId: "proveedor-litoral",
     montoBruto: 22_000_000,
     fechaEmision: "2026-07-16",
@@ -279,7 +268,7 @@ export const facturas: Factura[] = [
   factura({
     id: "fac-0008",
     numero: "FC-Y-00019855",
-    pagadorId: "pagador-ypf",
+    pagadorId: "pagador-agroexport",
     proveedorId: "proveedor-litoral",
     montoBruto: 14_500_000,
     fechaEmision: "2026-06-15",
@@ -293,7 +282,7 @@ export const facturas: Factura[] = [
   factura({
     id: "fac-0009",
     numero: "FC-Y-00019978",
-    pagadorId: "pagador-ypf",
+    pagadorId: "pagador-agroexport",
     proveedorId: "proveedor-repuestossur",
     montoBruto: 9_800_000,
     fechaEmision: "2026-08-06",
@@ -393,7 +382,7 @@ export const facturas: Factura[] = [
   factura({
     id: "fac-0016",
     numero: "FC-Y-00020044",
-    pagadorId: "pagador-ypf",
+    pagadorId: "pagador-agroexport",
     proveedorId: "proveedor-litoral",
     montoBruto: 26_400_000,
     fechaEmision: "2026-08-09",

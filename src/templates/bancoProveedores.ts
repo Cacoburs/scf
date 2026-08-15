@@ -76,7 +76,7 @@ export function bancoProveedoresPage(opts: { user: User; toast?: string }): stri
   return dashboardShell({
     role: "banco",
     user: opts.user,
-    empresaNombre: "Banco Piano",
+    empresaNombre: "Fondos S.A.",
     activeHref: "/banco/proveedores",
     pageTitle: "Proveedores",
     content,

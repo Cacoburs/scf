@@ -138,7 +138,7 @@ export function bancoCarteraPage(opts: { user: User; toast?: string }): string {
   return dashboardShell({
     role: "banco",
     user: opts.user,
-    empresaNombre: "Banco Piano",
+    empresaNombre: "Fondos S.A.",
     activeHref: "/banco/cartera",
     pageTitle: "Cartera activa",
     content,

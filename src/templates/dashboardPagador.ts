@@ -56,7 +56,7 @@ export function pagadorDashboard(opts: {
         <div class="delta delta-up">avanzando hacia fondeo</div>
       </div>
       <div class="kpi-card">
-        <div class="label">Financiadas por Banco Piano</div>
+        <div class="label">Financiadas por Fondos S.A.</div>
         <div class="value">${financiadas.length}</div>
         <div class="delta delta-up">proveedor ya cobró</div>
       </div>
@@ -97,7 +97,7 @@ export function pagadorDashboard(opts: {
     </div>
 
     <p class="footnote">
-      Vista de demostración — AgroExport Pampa S.A. Al dar conformidad, la factura queda habilitada para que
+      Vista de demostración — YPF S.A. Al dar conformidad, la factura queda habilitada para que
       el proveedor pida el anticipo; el pagador no adelanta fondos ni asume costo alguno.
     </p>
   `;
@@ -105,7 +105,7 @@ export function pagadorDashboard(opts: {
   return dashboardShell({
     role: "pagador",
     user: opts.user,
-    empresaNombre: "AgroExport Pampa S.A.",
+    empresaNombre: "YPF S.A.",
     activeHref: "/pagador",
     pageTitle: "Vista general",
     content,

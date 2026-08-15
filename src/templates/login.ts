@@ -28,7 +28,7 @@ const CONFIG: Record<Role, LoginPageConfig> = {
     ],
     accentClass: "btn-banco",
     panelGradient: "linear-gradient(160deg, var(--navy-950), var(--navy-700))",
-    demoEmail: "mesa@bancopiano.com.ar",
+    demoEmail: "mesa@fondossa.com.ar",
     demoPassword: "demo1234",
   },
   pagador: {
@@ -44,7 +44,7 @@ const CONFIG: Record<Role, LoginPageConfig> = {
     ],
     accentClass: "btn-pagador",
     panelGradient: "linear-gradient(160deg, #0f2e2b, var(--teal-600))",
-    demoEmail: "finanzas@agroexportpampa.com.ar",
+    demoEmail: "finanzas@ypf.com.ar",
     demoPassword: "demo1234",
   },
   proveedor: {
@@ -60,7 +60,7 @@ const CONFIG: Record<Role, LoginPageConfig> = {
     ],
     accentClass: "btn-proveedor",
     panelGradient: "linear-gradient(160deg, #3a1d0a, var(--orange-600))",
-    demoEmail: "pagos@metalurgicasur.com.ar",
+    demoEmail: "pagos@errazuriz.com.ar",
     demoPassword: "demo1234",
   },
 };

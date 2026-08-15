@@ -133,7 +133,7 @@ export function bancoDashboard(opts: {
       <div class="panel-header">
         <div>
           <h2>Cartera financiada</h2>
-          <p>Operaciones desembolsadas por Banco Piano, a la espera del cobro del deudor cedido.</p>
+          <p>Operaciones desembolsadas por Fondos S.A., a la espera del cobro del deudor cedido.</p>
         </div>
       </div>
       ${
@@ -147,7 +147,7 @@ export function bancoDashboard(opts: {
     </div>
 
     <p class="footnote">
-      Vista de demostración — Banco Piano. Los montos, scores y tasas son datos simulados para ilustrar el
+      Vista de demostración — Fondos S.A.. Los montos, scores y tasas son datos simulados para ilustrar el
       flujo de aprobación de fondeo. Sin integración con sistemas core bancarios en esta versión.
     </p>
   `;
@@ -155,7 +155,7 @@ export function bancoDashboard(opts: {
   return dashboardShell({
     role: "banco",
     user: opts.user,
-    empresaNombre: "Banco Piano",
+    empresaNombre: "Fondos S.A.",
     activeHref: "/banco",
     pageTitle: "Mesa de fondeo",
     content,

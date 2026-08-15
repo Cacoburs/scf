@@ -151,7 +151,7 @@ export function bancoFacturasPage(opts: {
   return dashboardShell({
     role: "banco",
     user: opts.user,
-    empresaNombre: "Banco Piano",
+    empresaNombre: "Fondos S.A.",
     activeHref: "/banco/facturas",
     pageTitle: "Facturas a fondear",
     content,

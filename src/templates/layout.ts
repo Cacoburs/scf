@@ -43,7 +43,7 @@ const NAV_BY_ROLE: Record<Role, { section: string; items: { href: string; label:
   ],
   pagador: [
     {
-      section: "AgroExport Pampa",
+      section: "YPF",
       items: [
         { href: "/pagador", label: "Vista general", icon: "◆" },
         { href: "/pagador/facturas", label: "Mis facturas", icon: "▤" },

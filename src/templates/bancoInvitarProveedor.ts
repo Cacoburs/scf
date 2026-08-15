@@ -45,7 +45,7 @@ export function bancoInvitarProveedorPage(opts: { user: User }): string {
   return dashboardShell({
     role: "banco",
     user: opts.user,
-    empresaNombre: "Banco Piano",
+    empresaNombre: "Fondos S.A.",
     activeHref: "/banco/proveedores",
     pageTitle: "Invitar proveedor",
     content,

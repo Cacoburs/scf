@@ -141,7 +141,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === "/banco" && method === "GET") {
       const session = requireRole(req, res, "banco");
       if (!session) return;
-      const user = findUserByEmail("mesa@bancopiano.com.ar")!;
+      const user = findUserByEmail("mesa@fondossa.com.ar")!;
       send(res, 200, bancoDashboard({ user, facturas: facturasParaBanco(), toast }));
       return;
     }
@@ -162,7 +162,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === "/banco/facturas" && method === "GET") {
       const session = requireRole(req, res, "banco");
       if (!session) return;
-      const user = findUserByEmail("mesa@bancopiano.com.ar")!;
+      const user = findUserByEmail("mesa@fondossa.com.ar")!;
       send(
         res,
         200,
@@ -235,7 +235,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === "/banco/cartera" && method === "GET") {
       const session = requireRole(req, res, "banco");
       if (!session) return;
-      const user = findUserByEmail("mesa@bancopiano.com.ar")!;
+      const user = findUserByEmail("mesa@fondossa.com.ar")!;
       send(res, 200, bancoCarteraPage({ user, toast }));
       return;
     }
@@ -273,7 +273,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === "/banco/pagadores" && method === "GET") {
       const session = requireRole(req, res, "banco");
       if (!session) return;
-      const user = findUserByEmail("mesa@bancopiano.com.ar")!;
+      const user = findUserByEmail("mesa@fondossa.com.ar")!;
       send(res, 200, bancoPagadoresPage({ user, toast }));
       return;
     }
@@ -281,7 +281,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === "/banco/pagadores/nuevo" && method === "GET") {
       const session = requireRole(req, res, "banco");
       if (!session) return;
-      const user = findUserByEmail("mesa@bancopiano.com.ar")!;
+      const user = findUserByEmail("mesa@fondossa.com.ar")!;
       send(res, 200, bancoAltaPagadorPage({ user }));
       return;
     }
@@ -345,7 +345,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === "/banco/proveedores" && method === "GET") {
       const session = requireRole(req, res, "banco");
       if (!session) return;
-      const user = findUserByEmail("mesa@bancopiano.com.ar")!;
+      const user = findUserByEmail("mesa@fondossa.com.ar")!;
       send(res, 200, bancoProveedoresPage({ user, toast }));
       return;
     }
@@ -353,7 +353,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === "/banco/proveedores/invitar" && method === "GET") {
       const session = requireRole(req, res, "banco");
       if (!session) return;
-      const user = findUserByEmail("mesa@bancopiano.com.ar")!;
+      const user = findUserByEmail("mesa@fondossa.com.ar")!;
       send(res, 200, bancoInvitarProveedorPage({ user }));
       return;
     }
@@ -406,7 +406,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === "/banco/scoring" && method === "GET") {
       const session = requireRole(req, res, "banco");
       if (!session) return;
-      const user = findUserByEmail("mesa@bancopiano.com.ar")!;
+      const user = findUserByEmail("mesa@fondossa.com.ar")!;
       send(res, 200, bancoScoringPage({ user, toast }));
       return;
     }
@@ -423,7 +423,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === "/pagador" && method === "GET") {
       const session = requireRole(req, res, "pagador");
       if (!session) return;
-      const user = findUserByEmail("finanzas@agroexportpampa.com.ar")!;
+      const user = findUserByEmail("finanzas@ypf.com.ar")!;
       send(res, 200, pagadorDashboard({ user, facturas: facturasPorPagador(user.empresaId), toast }));
       return;
     }
@@ -442,7 +442,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === "/proveedor" && method === "GET") {
       const session = requireRole(req, res, "proveedor");
       if (!session) return;
-      const user = findUserByEmail("pagos@metalurgicasur.com.ar")!;
+      const user = findUserByEmail("pagos@errazuriz.com.ar")!;
       send(res, 200, proveedorDashboard({ user, facturas: facturasPorProveedor(user.empresaId), toast }));
       return;
     }
@@ -453,18 +453,18 @@ const server = http.createServer(async (req, res) => {
       if (!session) return;
       const [, id] = proveedorAccion;
       actualizarEstadoFactura(id, "pendiente_fondeo");
-      redirect(res, `/proveedor?toast=${encodeURIComponent("Solicitud enviada. Banco Piano la revisará para el fondeo.")}`);
+      redirect(res, `/proveedor?toast=${encodeURIComponent("Solicitud enviada. Fondos S.A. la revisará para el fondeo.")}`);
       return;
     }
 
     // --- Stub pages (secondary nav items not built yet in this iteration) ---
     const STUBS: Record<string, { role: Role; title: string; empresa: string; userEmail: string }> = {
-      "/banco/limites": { role: "banco", title: "Límites y política", empresa: "Banco Piano", userEmail: "mesa@bancopiano.com.ar" },
-      "/pagador/facturas": { role: "pagador", title: "Mis facturas", empresa: "AgroExport Pampa S.A.", userEmail: "finanzas@agroexportpampa.com.ar" },
-      "/pagador/proveedores": { role: "pagador", title: "Proveedores", empresa: "AgroExport Pampa S.A.", userEmail: "finanzas@agroexportpampa.com.ar" },
-      "/pagador/equipo": { role: "pagador", title: "Equipo y reglas", empresa: "AgroExport Pampa S.A.", userEmail: "finanzas@agroexportpampa.com.ar" },
-      "/proveedor/facturas": { role: "proveedor", title: "Facturas elegibles", empresa: "Metalúrgica Sur SRL", userEmail: "pagos@metalurgicasur.com.ar" },
-      "/proveedor/historial": { role: "proveedor", title: "Historial", empresa: "Metalúrgica Sur SRL", userEmail: "pagos@metalurgicasur.com.ar" },
+      "/banco/limites": { role: "banco", title: "Límites y política", empresa: "Fondos S.A.", userEmail: "mesa@fondossa.com.ar" },
+      "/pagador/facturas": { role: "pagador", title: "Mis facturas", empresa: "YPF S.A.", userEmail: "finanzas@ypf.com.ar" },
+      "/pagador/proveedores": { role: "pagador", title: "Proveedores", empresa: "YPF S.A.", userEmail: "finanzas@ypf.com.ar" },
+      "/pagador/equipo": { role: "pagador", title: "Equipo y reglas", empresa: "YPF S.A.", userEmail: "finanzas@ypf.com.ar" },
+      "/proveedor/facturas": { role: "proveedor", title: "Facturas elegibles", empresa: "Errázuriz S.A.", userEmail: "pagos@errazuriz.com.ar" },
+      "/proveedor/historial": { role: "proveedor", title: "Historial", empresa: "Errázuriz S.A.", userEmail: "pagos@errazuriz.com.ar" },
     };
     if (method === "GET" && STUBS[pathname]) {
       const stub = STUBS[pathname];

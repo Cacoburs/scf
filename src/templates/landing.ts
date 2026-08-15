@@ -25,19 +25,19 @@ export function landingPage(): string {
           <span class="tag tag-banco">Banco / Fondo</span>
           <h3>Mesa de fondeo</h3>
           <p>Revisá facturas elegibles, aprobá el desembolso y monitoreá la cartera activa.</p>
-          <span class="enter">Entrar como Banco Piano →</span>
+          <span class="enter">Entrar como Fondos S.A. →</span>
         </a>
         <a class="portal-card" href="/pagador/login">
           <span class="tag tag-pagador">Empresa Ancla</span>
           <h3>Portal del pagador</h3>
           <p>Cargá y validá facturas, gestioná tu cadena de proveedores habilitados.</p>
-          <span class="enter">Entrar como AgroExport Pampa →</span>
+          <span class="enter">Entrar como YPF →</span>
         </a>
         <a class="portal-card" href="/proveedor/login">
           <span class="tag tag-proveedor">Proveedor</span>
           <h3>Portal del proveedor</h3>
           <p>Mirá cuánto podés cobrar hoy y pedí el anticipo sobre tus facturas elegibles.</p>
-          <span class="enter">Entrar como Metalúrgica Sur →</span>
+          <span class="enter">Entrar como Errázuriz S.A. →</span>
         </a>
       </div>
     </div>
