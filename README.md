@@ -16,8 +16,21 @@ Banco Piano — antes de construir integraciones reales.
   - **Banco Piano** — cola de aprobación de fondeo, cartera activa, aprobar/rechazar.
   - **AgroExport Pampa (empresa ancla)** — facturas pendientes de conformidad, ciclo en curso.
   - **Metalúrgica Sur (proveedor)** — cuánto puede cobrar hoy, pedir anticipo.
-- El resto de los ítems del menú (`Cartera`, `Límites`, `Equipo`, etc.) están como
-  placeholder — quedan para la próxima iteración, no rompen la navegación.
+- Portal del Fondo (Banco Piano) ya completo para las historias P1/P2 de la épica E2:
+  - **Explorador maestro de facturas** (`/banco/facturas`) — filtros, paginación, export CSV real
+    y acciones de intervención manual (revisión L2, bloqueo anti-fraude, override aprobar/rechazar).
+  - **Cartera activa** (`/banco/cartera`) — total vigente, concentración por pagador con gráfico
+    de barra apilada, y acciones sobre la línea (ampliar, watch list, bloquear cesiones).
+  - **Pagadores ancla** (`/banco/pagadores`) — CRM con lifecycle, ejecutivo, revenue, SLA y alta
+    con control 4-eyes (`/banco/pagadores/nuevo`).
+  - **Proveedores** (`/banco/proveedores`) — CRM con nivel KYB, pagadores asociados, alertas, e
+    invitación de nuevos proveedores (`/banco/proveedores/invitar`).
+  - **Scoring** (`/banco/scoring`) — distribución de scores, ranking por entidad y "Recalcular ahora".
+  - El modelo de datos ahora tiene 5 pagadores y 6 proveedores (antes 1 y 1) para que estas vistas
+    de cartera/CRM tengan volumen realista — el circuito de demo original (AgroExport ↔ Metalúrgica
+    Sur) sigue intacto.
+- El resto de los ítems del menú (`Límites`, `Equipo`, etc.) siguen como placeholder — quedan
+  para la próxima iteración, no rompen la navegación.
 
 ## Cómo correrlo
 
@@ -90,7 +103,12 @@ Mapeado contra el backlog de historias de usuario ya existente en el proyecto:
 - AUTH-02/03: proteger rutas por rol con matriz de permisos completa y sidebar
   dinámica multi-nivel (ya hay una base, falta granularidad de mills_admin vs
   mills_ops si el banco necesita más de un tipo de usuario interno).
-- PAG-06: carga/importación de facturas por CSV o integración ERP.
-- RISK-01: motor de riesgo real en lugar de scores mockeados.
-- PROV-06/07: flujo de firma digital y confirmación con idempotencia real.
+- E3 Motor de riesgo (RISK-01 a RISK-07): drill-down explicable, comparación de
+  entidades, stress test, backtest — el `/banco/scoring` actual es una vista global
+  simplificada, no el motor de riesgo completo.
+- E5/E6/E7 portal del pagador: reglas de aprobación por bracket (PAG-03), carga/
+  importación de facturas por CSV o ERP (PAG-06), cola de conformidades (PAG-09),
+  aprobaciones (PAG-11) — hoy solo está el loop core de conformidad.
+- E9 portal del proveedor: flujo de descuento completo en 3 pasos con firma digital
+  simulada (PROV-05/06/07) — hoy solo está "pedir anticipo" en un paso.
 - Persistencia real (hoy es in-memory) — base de datos + migraciones.

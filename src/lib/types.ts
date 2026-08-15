@@ -10,6 +10,10 @@ export interface User {
   empresaId: string;
 }
 
+export type LifecyclePagador = "activo" | "onboarding" | "pendiente_4ojos" | "pausado" | "suspendido";
+export type LifecycleProveedor = "activo" | "invitado" | "kyb_pendiente" | "dormant" | "bloqueado";
+export type NivelKYB = "L1" | "L2" | "L3";
+
 export interface Empresa {
   id: string;
   nombre: string;
@@ -17,6 +21,20 @@ export interface Empresa {
   tipo: "banco" | "pagador" | "proveedor";
   sector?: string;
   logoIniciales: string;
+
+  // --- Campos vistos desde el CRM del Fondo, solo aplican a tipo "pagador" ---
+  lifecyclePagador?: LifecyclePagador;
+  ejecutivo?: string;
+  limiteExposicion?: number;
+  watchlist?: boolean;
+  bloqueadoCesiones?: boolean;
+
+  // --- Campos vistos desde el CRM del Fondo, solo aplican a tipo "proveedor" ---
+  lifecycleProveedor?: LifecycleProveedor;
+  kyb?: NivelKYB;
+  alertas?: string[];
+  bloqueadoAntifraude?: boolean;
+  pagadoresIds?: string[]; // relación explícita, usada cuando aún no hay facturas
 }
 
 export type EstadoFactura =
@@ -42,4 +60,8 @@ export interface Factura {
   diasDescuento: number;
   montoNeto: number;
   moneda: "ARS" | "USD";
+
+  // --- Excepciones vistas desde el explorador maestro del Fondo ---
+  revisionManualL2?: boolean;
+  bloqueadaAntifraude?: boolean;
 }

@@ -27,6 +27,14 @@ const NAV_BY_ROLE: Record<Role, { section: string; items: { href: string; label:
       ],
     },
     {
+      section: "Relaciones",
+      items: [
+        { href: "/banco/pagadores", label: "Pagadores ancla", icon: "◈" },
+        { href: "/banco/proveedores", label: "Proveedores", icon: "◇" },
+        { href: "/banco/scoring", label: "Scoring", icon: "▲" },
+      ],
+    },
+    {
       section: "Configuración",
       items: [
         { href: "/banco/limites", label: "Límites y política", icon: "⚙" },
