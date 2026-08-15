@@ -1,0 +1,17 @@
+{
+  "name": "mills-mvp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Mills Capital — MVP funcional de factoring/SCF con 3 portales (banco/fondo, empresa ancla, proveedor).",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0"
+  }
+}
