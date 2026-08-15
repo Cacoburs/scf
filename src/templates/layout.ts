@@ -116,8 +116,8 @@ export function dashboardShell(opts: {
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-mark">MC</div>
-        <span>Mills Capital</span>
+        <div class="brand-mark">FS</div>
+        <span>Fondos S.A.</span>
       </div>
       <nav>${navHtml}</nav>
       <div class="userbox">
@@ -144,7 +144,7 @@ export function dashboardShell(opts: {
   <script src="/client.js"></script>
   `;
 
-  return htmlDoc(`${opts.pageTitle} · Mills Capital`, body);
+  return htmlDoc(`${opts.pageTitle} · Fondos S.A.`, body);
 }
 
 export function money(n: number, currency: "ARS" | "USD" = "ARS"): string {

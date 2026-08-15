@@ -494,6 +494,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Mills Capital MVP corriendo en http://localhost:${PORT}`);
+  console.log(`Fondos S.A. MVP corriendo en http://localhost:${PORT}`);
   console.log(`Facturas cargadas: ${facturas.length}`);
 });

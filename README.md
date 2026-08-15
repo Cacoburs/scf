@@ -1,4 +1,4 @@
-# Mills Capital — MVP funcional (demo)
+# Fondos S.A. — MVP funcional (demo)
 
 MVP navegable de la plataforma de Supply Chain Finance / factoring: **3 portales**
 (banco/fondo, empresa ancla, proveedor) conectados por un mismo ciclo de vida de
@@ -90,7 +90,7 @@ node scripts/e2e.mjs
   son ficticios y viven en memoria del servidor.
 - No hay tokenización ni blockchain visible — esto es el MVP operativo de SCF/
   confirming (closed-loop), consistente con la recomendación del propio doc de
-  arquitectura de Mills: "no priorizar blockchain visible al usuario" en esta fase.
+  arquitectura: "no priorizar blockchain visible al usuario" en esta fase.
 - Autenticación simplificada para demo (sin hash de contraseña, sin 2FA, sin
   KYC/KYB) — no usar esta base de auth tal cual en producción.
 - Un solo pagador ancla y un solo proveedor cargados; el modelo de datos ya

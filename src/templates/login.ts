@@ -72,7 +72,7 @@ export function loginPage(role: Role, error?: string): string {
   <div class="login-page">
     <div class="login-brand-panel" style="background:${c.panelGradient};">
       <div>
-        <a class="top-link" href="/">← Volver a Mills Capital</a>
+        <a class="top-link" href="/">← Volver a Fondos S.A.</a>
       </div>
       <div>
         <h2>${c.heroTitle}</h2>
@@ -83,7 +83,7 @@ export function loginPage(role: Role, error?: string): string {
             .join("")}
         </div>
       </div>
-      <div class="fine">Mills Capital · Portal ${c.title} · Demo funcional</div>
+      <div class="fine">Fondos S.A. · Portal ${c.title} · Demo funcional</div>
     </div>
 
     <div class="login-form-panel">
@@ -115,5 +115,5 @@ export function loginPage(role: Role, error?: string): string {
   </div>
   `;
 
-  return htmlDoc(`Ingresar · ${c.title} · Mills Capital`, body);
+  return htmlDoc(`Ingresar · ${c.title} · Fondos S.A.`, body);
 }

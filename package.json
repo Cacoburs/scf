@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Mills Capital — MVP funcional de factoring/SCF con 3 portales (banco/fondo, empresa ancla, proveedor).",
+  "description": "Fondos S.A. — MVP funcional de factoring/SCF con 3 portales (banco/fondo, empresa ancla, proveedor).",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",

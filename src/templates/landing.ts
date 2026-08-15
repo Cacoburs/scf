@@ -5,8 +5,8 @@ export function landingPage(): string {
   <div class="landing">
     <div class="landing-nav">
       <div class="brand">
-        <div class="brand-mark">MC</div>
-        <span>Mills Capital</span>
+        <div class="brand-mark">FS</div>
+        <span>Fondos S.A.</span>
       </div>
       <span style="font-size:12.5px;color:#94a3b8;">Demo funcional · Supply Chain Finance</span>
     </div>
@@ -43,9 +43,9 @@ export function landingPage(): string {
     </div>
 
     <div class="landing-footer">
-      Mills Capital — demo interna. Datos ficticios, sin integración regulatoria ni de producción.
+      Fondos S.A. — demo interna. Datos ficticios, sin integración regulatoria ni de producción.
     </div>
   </div>
   `;
-  return htmlDoc("Mills Capital · Factoring digital", body);
+  return htmlDoc("Fondos S.A. · Factoring digital", body);
 }
