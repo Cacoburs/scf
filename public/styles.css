@@ -310,6 +310,19 @@ a { color: inherit; text-decoration: none; }
 }
 .logout-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
 
+/* Línea de color por actor — misma identidad que su pantalla de login */
+.sidebar.role-banco .brand-mark { background: linear-gradient(135deg, var(--gold-500), #92620a); color: #1c1302; }
+.sidebar.role-banco nav a.active { background: rgba(202, 138, 4, 0.16); color: var(--gold-500); }
+.sidebar.role-banco .avatar { background: var(--gold-500); color: #1c1302; }
+
+.sidebar.role-pagador .brand-mark { background: linear-gradient(135deg, var(--teal-400, #2dd4bf), var(--teal-600)); color: #06201c; }
+.sidebar.role-pagador nav a.active { background: rgba(20, 184, 166, 0.18); color: var(--teal-500); }
+.sidebar.role-pagador .avatar { background: var(--teal-600); }
+
+.sidebar.role-proveedor .brand-mark { background: linear-gradient(135deg, #fb923c, var(--orange-600)); color: #2b1102; }
+.sidebar.role-proveedor nav a.active { background: rgba(234, 88, 12, 0.18); color: #fb923c; }
+.sidebar.role-proveedor .avatar { background: var(--orange-600); }
+
 .main { flex: 1; min-width: 0; }
 .topbar {
   height: 64px;

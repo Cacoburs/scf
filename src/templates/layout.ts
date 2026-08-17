@@ -82,6 +82,15 @@ const ROLE_BADGE_CLASS: Record<Role, string> = {
   proveedor: "tag-proveedor",
 };
 
+// Identidad de marca por actor en el panel lateral — mismo nombre e iniciales
+// que el resto de la vista, y la misma línea de color que ese actor tiene en
+// su pantalla de login (tag-banco/pagador/proveedor, btn-banco/pagador/proveedor).
+const ROLE_BRAND: Record<Role, { mark: string; name: string; cssClass: string }> = {
+  banco: { mark: "FS", name: "Fondos S.A.", cssClass: "role-banco" },
+  pagador: { mark: "YP", name: "YPF S.A.", cssClass: "role-pagador" },
+  proveedor: { mark: "EZ", name: "Errázuriz S.A.", cssClass: "role-proveedor" },
+};
+
 export function dashboardShell(opts: {
   role: Role;
   user: User;
@@ -113,12 +122,14 @@ export function dashboardShell(opts: {
     )
     .join("\n");
 
+  const brand = ROLE_BRAND[opts.role];
+
   const body = `
   <div class="app-shell">
-    <aside class="sidebar">
+    <aside class="sidebar ${brand.cssClass}">
       <div class="brand">
-        <div class="brand-mark">FS</div>
-        <span>Fondos S.A.</span>
+        <div class="brand-mark">${brand.mark}</div>
+        <span>${brand.name}</span>
       </div>
       <nav>${navHtml}</nav>
       <div class="userbox">
@@ -145,7 +156,7 @@ export function dashboardShell(opts: {
   <script src="/client.js"></script>
   `;
 
-  return htmlDoc(`${opts.pageTitle} · Fondos S.A.`, body);
+  return htmlDoc(`${opts.pageTitle} · ${brand.name}`, body);
 }
 
 export function money(n: number, currency: "ARS" | "USD" = "ARS"): string {
