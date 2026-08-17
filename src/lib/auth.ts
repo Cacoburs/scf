@@ -2,9 +2,19 @@ import crypto from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Role } from "./types.js";
 
-// Secreto de sesión solo para la demo. En producción: variable de entorno,
-// rotación de claves, cookies httpOnly+secure detrás de HTTPS real, etc.
-const SESSION_SECRET = "mills-mvp-demo-secret-no-usar-en-produccion";
+// El secreto de firma de la sesión viene de una variable de entorno — nunca
+// hardcodeado ni commiteado. Si no está seteada (typ. en desarrollo local),
+// se genera una al azar en cada arranque: las sesiones no sobreviven un
+// reinicio del servidor, pero tampoco hay ningún secreto fijo dando vueltas
+// en el repo. Para producción: SESSION_SECRET fija en el entorno, rotación
+// de claves, cookies httpOnly+secure detrás de HTTPS real, etc.
+const SESSION_SECRET = process.env.SESSION_SECRET ?? crypto.randomBytes(32).toString("hex");
+if (!process.env.SESSION_SECRET) {
+  console.warn(
+    "[auth] SESSION_SECRET no está definida — usando una generada al azar para esta corrida. " +
+      "Definila en el entorno antes de desplegar a producción."
+  );
+}
 const COOKIE_NAME = "mills_session";
 
 export interface Session {

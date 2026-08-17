@@ -1,5 +1,5 @@
 import type { Empresa, User } from "../lib/types.js";
-import { dashboardShell, money } from "./layout.js";
+import { dashboardShell, money, esc } from "./layout.js";
 import {
   pagadores,
   exposicionPorPagador,
@@ -43,8 +43,8 @@ export function bancoCarteraPage(opts: { user: User; toast?: string }): string {
     return `
       <tr>
         <td>
-          <div style="font-weight:600;color:var(--ink-900);">${row.pagador.nombre}</div>
-          <div style="font-size:11.5px;color:var(--ink-500);">${row.pagador.sector ?? "—"} · ${lifecycleBadge(row.pagador)}${row.pagador.watchlist ? ' <span class="badge-lifecycle badge-pausado">watch list</span>' : ""}${row.pagador.bloqueadoCesiones ? ' <span class="badge-lifecycle badge-bloqueado">cesiones bloqueadas</span>' : ""}</div>
+          <div style="font-weight:600;color:var(--ink-900);">${esc(row.pagador.nombre)}</div>
+          <div style="font-size:11.5px;color:var(--ink-500);">${esc(row.pagador.sector) || "—"} · ${lifecycleBadge(row.pagador)}${row.pagador.watchlist ? ' <span class="badge-lifecycle badge-pausado">watch list</span>' : ""}${row.pagador.bloqueadoCesiones ? ' <span class="badge-lifecycle badge-bloqueado">cesiones bloqueadas</span>' : ""}</div>
         </td>
         <td>${row.score}</td>
         <td class="num">${money(row.exposicion)}</td>
@@ -70,7 +70,7 @@ export function bancoCarteraPage(opts: { user: User; toast?: string }): string {
   };
 
   const content = `
-    ${opts.toast ? `<div class="toast-banner show">${opts.toast}</div>` : ""}
+    ${opts.toast ? `<div class="toast-banner show">${esc(opts.toast)}</div>` : ""}
 
     <div class="kpi-grid">
       <div class="kpi-card">
@@ -81,7 +81,7 @@ export function bancoCarteraPage(opts: { user: User; toast?: string }): string {
       <div class="kpi-card">
         <div class="label">Concentración top pagador</div>
         <div class="value">${barSegments[0] ? barSegments[0].pct.toFixed(1) : "0.0"}%</div>
-        <div class="delta delta-flat">${barSegments[0]?.pagador.nombre ?? "—"}</div>
+        <div class="delta delta-flat">${esc(barSegments[0]?.pagador.nombre) || "—"}</div>
       </div>
       <div class="kpi-card">
         <div class="label">Pagadores con exposición</div>
@@ -99,11 +99,11 @@ export function bancoCarteraPage(opts: { user: User; toast?: string }): string {
       </div>
       <div style="padding:20px;">
         <div class="concentracion-bar">
-          ${barSegments.map((s) => `<span style="width:${s.pct}%;background:${s.color};" title="${s.pagador.nombre} · ${s.pct.toFixed(1)}%"></span>`).join("")}
+          ${barSegments.map((s) => `<span style="width:${s.pct}%;background:${s.color};" title="${esc(s.pagador.nombre)} · ${s.pct.toFixed(1)}%"></span>`).join("")}
         </div>
         <div class="concentracion-legend">
           ${barSegments
-            .map((s) => `<span><span class="swatch" style="background:${s.color};"></span>${s.pagador.nombre} · ${s.pct.toFixed(1)}%</span>`)
+            .map((s) => `<span><span class="swatch" style="background:${s.color};"></span>${esc(s.pagador.nombre)} · ${s.pct.toFixed(1)}%</span>`)
             .join("")}
         </div>
       </div>

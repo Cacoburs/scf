@@ -15,6 +15,7 @@ import {
   facturasPorPagador,
   facturasPorProveedor,
   findUserByEmail,
+  verifyCredentials,
   getEmpresa,
   toggleRevisionManualL2,
   toggleBloqueadaAntifraude,
@@ -92,9 +93,9 @@ function handleLoginPost(role: Role) {
     const body = await readBody(req);
     const email = body.get("email") ?? "";
     const password = body.get("password") ?? "";
-    const user = findUserByEmail(email);
+    const user = verifyCredentials(email, password, role);
 
-    if (!user || user.password !== password || user.role !== role) {
+    if (!user) {
       send(res, 401, loginPage(role, "Email o contraseña incorrectos para este portal."));
       return;
     }
@@ -291,12 +292,26 @@ const server = http.createServer(async (req, res) => {
       const session = requireRole(req, res, "banco");
       if (!session) return;
       const body = await readBody(req);
-      const nombre = body.get("nombre") ?? "";
-      const cuit = body.get("cuit") ?? "";
-      const sector = body.get("sector") ?? "";
-      const ejecutivo = body.get("ejecutivo") ?? "";
-      const limiteExposicion = Number(body.get("limite") ?? 0);
+      const nombre = (body.get("nombre") ?? "").trim();
+      const cuit = (body.get("cuit") ?? "").trim();
+      const sector = (body.get("sector") ?? "").trim();
+      const ejecutivo = (body.get("ejecutivo") ?? "").trim();
+      const limiteRaw = body.get("limite") ?? "";
+      const limiteExposicion = Number(limiteRaw);
       const proponerA4Ojos = body.get("modo") === "4ojos";
+
+      const values = { nombre, cuit, sector, ejecutivo, limite: limiteRaw };
+      const user = findUserByEmail("mesa@fondossa.com.ar")!;
+
+      if (!nombre || !cuit || !sector || !ejecutivo) {
+        send(res, 400, bancoAltaPagadorPage({ user, values, error: "Completá todos los campos antes de guardar." }));
+        return;
+      }
+      if (!Number.isFinite(limiteExposicion) || limiteExposicion < 1_000_000) {
+        send(res, 400, bancoAltaPagadorPage({ user, values, error: "El límite de exposición tiene que ser un número válido de al menos $1.000.000." }));
+        return;
+      }
+
       crearPagador({ nombre, cuit, sector, ejecutivo, limiteExposicion, proponerA4Ojos });
       const msg = proponerA4Ojos
         ? `${nombre} propuesto a 4-eyes. Queda pendiente hasta la aprobación de un segundo admin.`

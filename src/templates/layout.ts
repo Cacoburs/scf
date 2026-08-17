@@ -1,5 +1,20 @@
 import type { Role, User } from "../lib/types.js";
 
+// Escapa cualquier texto que haya podido escribir un usuario (nombre de
+// empresa, ejecutivo, sector, etc.) antes de insertarlo en el HTML. Sin esto,
+// alguien podría guardar <script> en un formulario y que se ejecute cada vez
+// que se renderiza esa pantalla — usar SIEMPRE con texto que no sea un valor
+// fijo del propio código (labels, estados, montos ya formateados).
+export function esc(value: string | number | null | undefined): string {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export function htmlDoc(title: string, body: string, extraHead = ""): string {
   return `<!doctype html>
 <html lang="es">
@@ -135,8 +150,8 @@ export function dashboardShell(opts: {
       <div class="userbox">
         <div class="avatar">${initials}</div>
         <div class="who">
-          <div class="name">${opts.user.nombre}</div>
-          <div class="role">${opts.user.cargo}</div>
+          <div class="name">${esc(opts.user.nombre)}</div>
+          <div class="role">${esc(opts.user.cargo)}</div>
         </div>
         <form method="post" action="/logout">
           <button class="logout-btn" title="Cerrar sesión">Salir</button>

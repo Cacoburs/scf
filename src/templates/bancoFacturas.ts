@@ -1,5 +1,5 @@
 import type { Factura, User } from "../lib/types.js";
-import { dashboardShell, money, formatDate, estadoPill, scoreBar } from "./layout.js";
+import { dashboardShell, money, formatDate, estadoPill, scoreBar, esc } from "./layout.js";
 import { getEmpresa, pagadores } from "../lib/data.js";
 
 const ESTADOS_ORDEN: Factura["estado"][] = [
@@ -62,9 +62,9 @@ export function bancoFacturasPage(opts: {
     const proveedor = getEmpresa(f.proveedorId);
     return `
       <tr>
-        <td class="mono">${f.numero}</td>
-        <td>${pagador?.nombre ?? "—"}</td>
-        <td>${proveedor?.nombre ?? "—"}</td>
+        <td class="mono">${esc(f.numero)}</td>
+        <td>${esc(pagador?.nombre) || "—"}</td>
+        <td>${esc(proveedor?.nombre) || "—"}</td>
         <td>${formatDate(f.fechaVencimiento)}</td>
         <td class="num">${money(f.montoBruto, f.moneda)}</td>
         <td>${scoreBar(f.scoreRiesgo)}</td>
@@ -95,11 +95,11 @@ export function bancoFacturasPage(opts: {
   ).join("");
 
   const optionsPagador = pagadores()
-    .map((p) => `<option value="${p.id}" ${opts.pagadorFiltro === p.id ? "selected" : ""}>${p.nombre}</option>`)
+    .map((p) => `<option value="${esc(p.id)}" ${opts.pagadorFiltro === p.id ? "selected" : ""}>${esc(p.nombre)}</option>`)
     .join("");
 
   const content = `
-    ${opts.toast ? `<div class="toast-banner show">${opts.toast}</div>` : ""}
+    ${opts.toast ? `<div class="toast-banner show">${esc(opts.toast)}</div>` : ""}
 
     <div class="panel">
       <div class="panel-header">

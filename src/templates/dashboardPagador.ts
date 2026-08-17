@@ -1,5 +1,5 @@
 import type { Factura, User } from "../lib/types.js";
-import { dashboardShell, money, formatDate, estadoPill } from "./layout.js";
+import { dashboardShell, money, formatDate, estadoPill, esc } from "./layout.js";
 import { getEmpresa } from "../lib/data.js";
 
 export function pagadorDashboard(opts: {
@@ -18,8 +18,8 @@ export function pagadorDashboard(opts: {
     const proveedor = getEmpresa(f.proveedorId);
     return `
       <tr>
-        <td class="mono">${f.numero}</td>
-        <td>${proveedor?.nombre ?? "—"}</td>
+        <td class="mono">${esc(f.numero)}</td>
+        <td>${esc(proveedor?.nombre) || "—"}</td>
         <td>${formatDate(f.fechaEmision)}</td>
         <td>${formatDate(f.fechaVencimiento)}</td>
         <td class="num">${money(f.montoBruto, f.moneda)}</td>
@@ -37,7 +37,7 @@ export function pagadorDashboard(opts: {
   };
 
   const content = `
-    ${opts.toast ? `<div class="toast-banner show">${opts.toast}</div>` : ""}
+    ${opts.toast ? `<div class="toast-banner show">${esc(opts.toast)}</div>` : ""}
 
     <div class="kpi-grid">
       <div class="kpi-card">

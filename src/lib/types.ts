@@ -3,7 +3,6 @@ export type Role = "banco" | "pagador" | "proveedor";
 export interface User {
   id: string;
   email: string;
-  password: string; // demo only — texto plano, NO usar así en producción
   role: Role;
   nombre: string;
   cargo: string;

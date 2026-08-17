@@ -1,5 +1,5 @@
 import type { Factura, User } from "../lib/types.js";
-import { dashboardShell, money, formatDate, estadoPill } from "./layout.js";
+import { dashboardShell, money, formatDate, estadoPill, esc } from "./layout.js";
 
 export function proveedorDashboard(opts: {
   user: User;
@@ -22,7 +22,7 @@ export function proveedorDashboard(opts: {
     const tea = (Math.pow(1 + f.tasaAnual / 100 / 365, 365) - 1) * 100;
     return `
       <tr>
-        <td class="mono">${f.numero}</td>
+        <td class="mono">${esc(f.numero)}</td>
         <td>${formatDate(f.fechaVencimiento)}</td>
         <td class="num">${money(f.montoBruto, f.moneda)}</td>
         <td class="num" style="color:var(--teal-600);font-weight:700;">${money(f.montoNeto, f.moneda)}</td>
@@ -38,14 +38,14 @@ export function proveedorDashboard(opts: {
 
   const filaSimple = (f: Factura) => `
       <tr>
-        <td class="mono">${f.numero}</td>
+        <td class="mono">${esc(f.numero)}</td>
         <td>${formatDate(f.fechaVencimiento)}</td>
         <td class="num">${money(f.montoBruto, f.moneda)}</td>
         <td>${estadoPill(f.estado)}</td>
       </tr>`;
 
   const content = `
-    ${opts.toast ? `<div class="toast-banner show">${opts.toast}</div>` : ""}
+    ${opts.toast ? `<div class="toast-banner show">${esc(opts.toast)}</div>` : ""}
 
     <div class="hero-liquidity">
       <div>

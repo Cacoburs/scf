@@ -1,5 +1,5 @@
 import type { Factura, User } from "../lib/types.js";
-import { dashboardShell, money, formatDate, estadoPill, scoreBar } from "./layout.js";
+import { dashboardShell, money, formatDate, estadoPill, scoreBar, esc } from "./layout.js";
 import { getEmpresa } from "../lib/data.js";
 
 export function bancoDashboard(opts: {
@@ -24,9 +24,9 @@ export function bancoDashboard(opts: {
     const pagador = getEmpresa(f.pagadorId);
     return `
       <tr>
-        <td class="mono">${f.numero}</td>
-        <td>${pagador?.nombre ?? "—"}</td>
-        <td>${proveedor?.nombre ?? "—"}</td>
+        <td class="mono">${esc(f.numero)}</td>
+        <td>${esc(pagador?.nombre) || "—"}</td>
+        <td>${esc(proveedor?.nombre) || "—"}</td>
         <td>${formatDate(f.fechaVencimiento)}</td>
         <td>${scoreBar(f.scoreRiesgo)}</td>
         <td class="num">${money(f.montoBruto, f.moneda)}</td>
@@ -48,8 +48,8 @@ export function bancoDashboard(opts: {
     const proveedor = getEmpresa(f.proveedorId);
     return `
       <tr>
-        <td class="mono">${f.numero}</td>
-        <td>${proveedor?.nombre ?? "—"}</td>
+        <td class="mono">${esc(f.numero)}</td>
+        <td>${esc(proveedor?.nombre) || "—"}</td>
         <td>${formatDate(f.fechaVencimiento)}</td>
         <td>${estadoPill(f.estado)}</td>
         <td class="num">${money(f.montoNeto, f.moneda)}</td>
@@ -57,7 +57,7 @@ export function bancoDashboard(opts: {
   };
 
   const content = `
-    ${opts.toast ? `<div class="toast-banner show">${opts.toast}</div>` : ""}
+    ${opts.toast ? `<div class="toast-banner show">${esc(opts.toast)}</div>` : ""}
 
     <div class="kpi-grid">
       <div class="kpi-card">
@@ -117,8 +117,8 @@ export function bancoDashboard(opts: {
         <tbody>${elegibles
           .map(
             (f) => `<tr>
-              <td class="mono">${f.numero}</td>
-              <td>${getEmpresa(f.proveedorId)?.nombre ?? "—"}</td>
+              <td class="mono">${esc(f.numero)}</td>
+              <td>${esc(getEmpresa(f.proveedorId)?.nombre) || "—"}</td>
               <td>${formatDate(f.fechaVencimiento)}</td>
               <td>${scoreBar(f.scoreRiesgo)}</td>
               <td class="num">${money(f.montoBruto, f.moneda)}</td>

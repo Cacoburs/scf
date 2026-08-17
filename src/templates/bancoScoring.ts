@@ -1,5 +1,5 @@
 import type { User } from "../lib/types.js";
-import { dashboardShell, formatDate, scoreBar } from "./layout.js";
+import { dashboardShell, formatDate, scoreBar, esc } from "./layout.js";
 import { facturas, getEmpresa, pagadores, proveedores, scorePromedioPagador, ultimoRecalculoScoring } from "../lib/data.js";
 
 const BUCKETS: [number, number][] = [
@@ -39,7 +39,7 @@ export function bancoScoringPage(opts: { user: User; toast?: string }): string {
     .sort((a, b) => b.score - a.score);
 
   const content = `
-    ${opts.toast ? `<div class="toast-banner show">${opts.toast}</div>` : ""}
+    ${opts.toast ? `<div class="toast-banner show">${esc(opts.toast)}</div>` : ""}
 
     <div class="kpi-grid">
       <div class="kpi-card">
@@ -99,7 +99,7 @@ export function bancoScoringPage(opts: { user: User; toast?: string }): string {
             .map((e) => {
               const t = tendenciaSimulada(e.empresa.id);
               return `<tr>
-                <td>${e.empresa.nombre}</td>
+                <td>${esc(e.empresa.nombre)}</td>
                 <td>${e.tipo}</td>
                 <td>${scoreBar(e.score)}</td>
                 <td style="color:${TENDENCIA_COLOR[t]};font-weight:700;">${TENDENCIA_ICON[t]}</td>
@@ -126,9 +126,9 @@ export function bancoScoringPage(opts: { user: User; toast?: string }): string {
         <tbody>${bajoUmbral
           .map(
             (f) => `<tr>
-              <td class="mono">${f.numero}</td>
-              <td>${getEmpresa(f.pagadorId)?.nombre ?? "—"}</td>
-              <td>${getEmpresa(f.proveedorId)?.nombre ?? "—"}</td>
+              <td class="mono">${esc(f.numero)}</td>
+              <td>${esc(getEmpresa(f.pagadorId)?.nombre) || "—"}</td>
+              <td>${esc(getEmpresa(f.proveedorId)?.nombre) || "—"}</td>
               <td>${scoreBar(f.scoreRiesgo)}</td>
             </tr>`
           )

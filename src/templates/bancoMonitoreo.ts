@@ -1,5 +1,5 @@
 import type { User } from "../lib/types.js";
-import { dashboardShell, money } from "./layout.js";
+import { dashboardShell, money, esc } from "./layout.js";
 import {
   facturasDesembolsadas,
   desembolsoPorIndustria,
@@ -24,7 +24,7 @@ function barraHorizontal(grupos: DesembolsoPorGrupo[], total: number, opts?: { l
       const pct = total > 0 ? (g.monto / total) * 100 : 0;
       return `
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-          <span style="width:150px;font-size:12.5px;color:var(--ink-700);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${g.clave}">${g.clave}</span>
+          <span style="width:150px;font-size:12.5px;color:var(--ink-700);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(g.clave)}">${esc(g.clave)}</span>
           <div style="flex:1;background:var(--line);border-radius:999px;height:14px;overflow:hidden;">
             <div style="width:${pct}%;height:100%;background:${PALETTE[i % PALETTE.length]};"></div>
           </div>
@@ -54,7 +54,7 @@ export function bancoMonitoreoPage(opts: { user: User; toast?: string }): string
   const maxMes = Math.max(1, ...porMes.map((m) => m.monto));
 
   const content = `
-    ${opts.toast ? `<div class="toast-banner show">${opts.toast}</div>` : ""}
+    ${opts.toast ? `<div class="toast-banner show">${esc(opts.toast)}</div>` : ""}
 
     <div class="kpi-grid">
       <div class="kpi-card">
@@ -132,7 +132,7 @@ export function bancoMonitoreoPage(opts: { user: User; toast?: string }): string
         <tbody>${porProveedor
           .map(
             (g) => `<tr>
-              <td>${g.clave}</td>
+              <td>${esc(g.clave)}</td>
               <td class="num">${g.operaciones}</td>
               <td class="num">${money(g.monto)}</td>
               <td class="num">${totalDesembolsado > 0 ? ((g.monto / totalDesembolsado) * 100).toFixed(1) : "0.0"}%</td>
@@ -171,7 +171,7 @@ export function bancoMonitoreoPage(opts: { user: User; toast?: string }): string
         <tbody>${porPagador
           .map(
             (g) => `<tr>
-              <td>${g.clave}</td>
+              <td>${esc(g.clave)}</td>
               <td class="num">${g.operaciones}</td>
               <td class="num">${money(g.monto)}</td>
               <td class="num">${totalDesembolsado > 0 ? ((g.monto / totalDesembolsado) * 100).toFixed(1) : "0.0"}%</td>

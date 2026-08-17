@@ -1,5 +1,5 @@
 import type { Empresa, User } from "../lib/types.js";
-import { dashboardShell, money } from "./layout.js";
+import { dashboardShell, money, esc } from "./layout.js";
 import { pagadores, volumenFinanciadoPagador, proveedoresDePagador } from "../lib/data.js";
 
 function slaSimulado(id: string): number {
@@ -26,11 +26,11 @@ export function bancoPagadoresPage(opts: { user: User; toast?: string }): string
     return `
       <tr>
         <td>
-          <div style="font-weight:600;color:var(--ink-900);">${p.nombre}</div>
-          <div style="font-size:11.5px;color:var(--ink-500);">${p.sector ?? "—"} · ${p.cuit}</div>
+          <div style="font-weight:600;color:var(--ink-900);">${esc(p.nombre)}</div>
+          <div style="font-size:11.5px;color:var(--ink-500);">${esc(p.sector) || "—"} · ${esc(p.cuit)}</div>
         </td>
         <td><span class="badge-lifecycle badge-${p.lifecyclePagador ?? "activo"}">${LIFECYCLE_LABEL[p.lifecyclePagador ?? "activo"]}</span></td>
-        <td>${p.ejecutivo ?? "—"}</td>
+        <td>${esc(p.ejecutivo) || "—"}</td>
         <td class="num">${money(revenue)}</td>
         <td class="num">${sla}%</td>
         <td class="num">${proveedoresDePagador(p.id).length}</td>
@@ -40,7 +40,7 @@ export function bancoPagadoresPage(opts: { user: User; toast?: string }): string
               <button class="mini-btn" type="submit">Programar review</button>
             </form>
             <form method="post" action="/banco/pagadores/${p.id}/ejecutivo" class="inline-reassign">
-              <input class="text-input" name="ejecutivo" value="${p.ejecutivo ?? ""}" />
+              <input class="text-input" name="ejecutivo" value="${esc(p.ejecutivo)}" />
               <button class="mini-btn" type="submit">Reasignar</button>
             </form>
             <a class="mini-btn" href="/banco/limites">Política de aprobación</a>
@@ -48,7 +48,7 @@ export function bancoPagadoresPage(opts: { user: User; toast?: string }): string
             ${
               pendiente4ojos
                 ? `<form method="post" action="/banco/pagadores/${p.id}/aprobar-alta"><button class="mini-btn primary" type="submit">Aprobar alta (4-eyes)</button></form>`
-                : `<form method="post" action="/banco/pagadores/${p.id}/suspender" onsubmit="return confirm('¿Seguro que querés ${suspendido ? "reactivar" : "suspender"} a ${p.nombre.replace(/'/g, "")}? ${suspendido ? "" : "Esto detiene nuevas originaciones de este pagador."}');">
+                : `<form method="post" action="/banco/pagadores/${p.id}/suspender" onsubmit="return confirm('¿Seguro que querés ${suspendido ? "reactivar" : "suspender"} a ${esc(p.nombre.replace(/'/g, ""))}? ${suspendido ? "" : "Esto detiene nuevas originaciones de este pagador."}');">
                     <button class="mini-btn danger" type="submit">${suspendido ? "Reactivar" : "Suspender"}</button>
                   </form>`
             }
@@ -58,7 +58,7 @@ export function bancoPagadoresPage(opts: { user: User; toast?: string }): string
   };
 
   const content = `
-    ${opts.toast ? `<div class="toast-banner show">${opts.toast}</div>` : ""}
+    ${opts.toast ? `<div class="toast-banner show">${esc(opts.toast)}</div>` : ""}
 
     <div class="panel">
       <div class="panel-header">

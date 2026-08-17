@@ -1,5 +1,5 @@
 import type { Empresa, User } from "../lib/types.js";
-import { dashboardShell, money } from "./layout.js";
+import { dashboardShell, money, esc } from "./layout.js";
 import { proveedores, volumenDescontadoProveedor, pagadoresDeProveedor } from "../lib/data.js";
 
 const LIFECYCLE_LABEL: Record<string, string> = {
@@ -21,13 +21,13 @@ export function bancoProveedoresPage(opts: { user: User; toast?: string }): stri
     return `
       <tr>
         <td>
-          <div style="font-weight:600;color:var(--ink-900);">${p.nombre}</div>
-          <div style="font-size:11.5px;color:var(--ink-500);">${p.sector ?? "—"} · ${p.cuit}</div>
-          ${(p.alertas ?? []).map((a) => `<span class="alert-chip">${a}</span>`).join("")}
+          <div style="font-weight:600;color:var(--ink-900);">${esc(p.nombre)}</div>
+          <div style="font-size:11.5px;color:var(--ink-500);">${esc(p.sector) || "—"} · ${esc(p.cuit)}</div>
+          ${(p.alertas ?? []).map((a) => `<span class="alert-chip">${esc(a)}</span>`).join("")}
         </td>
         <td><span class="badge-lifecycle badge-${p.lifecycleProveedor ?? "activo"}">${LIFECYCLE_LABEL[p.lifecycleProveedor ?? "activo"]}</span></td>
         <td><span class="kyb-badge">${p.kyb ?? "L1"}</span></td>
-        <td>${pagadoresAsoc.length === 0 ? "—" : pagadoresAsoc.map((pa) => pa.nombre).join(", ")}</td>
+        <td>${pagadoresAsoc.length === 0 ? "—" : pagadoresAsoc.map((pa) => esc(pa.nombre)).join(", ")}</td>
         <td class="num">${money(volumen)}</td>
         <td>
           <div class="row-actions">
@@ -39,7 +39,7 @@ export function bancoProveedoresPage(opts: { user: User; toast?: string }): stri
             </form>
             <a class="mini-btn" href="mailto:contacto@${p.id}.com.ar">Contactar</a>
             <a class="mini-btn" href="/banco/scoring">Ver en motor de riesgo</a>
-            <form method="post" action="/banco/proveedores/${p.id}/bloquear-antifraude" onsubmit="return confirm('¿Seguro que querés ${bloqueado ? "desbloquear" : "bloquear por anti-fraude"} a ${p.nombre.replace(/'/g, "")}?');">
+            <form method="post" action="/banco/proveedores/${p.id}/bloquear-antifraude" onsubmit="return confirm('¿Seguro que querés ${bloqueado ? "desbloquear" : "bloquear por anti-fraude"} a ${esc(p.nombre.replace(/'/g, ""))}?');">
               <button class="mini-btn danger" type="submit">${bloqueado ? "Desbloquear" : "Bloquear AF"}</button>
             </form>
           </div>
@@ -48,7 +48,7 @@ export function bancoProveedoresPage(opts: { user: User; toast?: string }): stri
   };
 
   const content = `
-    ${opts.toast ? `<div class="toast-banner show">${opts.toast}</div>` : ""}
+    ${opts.toast ? `<div class="toast-banner show">${esc(opts.toast)}</div>` : ""}
 
     <div class="panel">
       <div class="panel-header">

@@ -34,7 +34,7 @@ Fondos S.A. — antes de construir integraciones reales.
 
 ## Cómo correrlo
 
-Requiere Node.js 18+.
+Requiere Node.js 22.5+ (usa `node:sqlite`, incluido en el propio Node).
 
 ```bash
 npm install
@@ -44,9 +44,19 @@ npm run dev
 Abrí `http://localhost:3000`. El servidor recarga solo al guardar cambios.
 
 No hay build ni bundler: es TypeScript corriendo directo con `tsx`, sin
-dependencias de producción. Los "datos" viven en memoria (`src/lib/data.ts`) y
-se reinician cada vez que reiniciás el servidor — ideal para repetir la demo
-las veces que haga falta desde el mismo estado inicial.
+dependencias de producción. Los datos viven en `data/mills.sqlite` (se crea
+solo la primera vez, con los datos de ejemplo) — **ya no se borran al
+reiniciar el servidor**. Si en algún momento querés volver al estado inicial
+de la demo, borrá ese archivo (`rm data/mills.sqlite`) y arrancá de nuevo.
+
+La firma de las cookies de sesión usa `SESSION_SECRET` del entorno; si no la
+definís, se genera una al azar en cada arranque (las sesiones no sobreviven
+un reinicio, pero no hay ningún secreto fijo dando vueltas en el repo). Para
+que las sesiones persistan entre reinicios, corré con una fija:
+
+```bash
+SESSION_SECRET="una-clave-larga-y-random" npm run dev
+```
 
 ## Accesos de demostración
 
@@ -87,14 +97,34 @@ node scripts/e2e.mjs
 ## Qué NO es esta versión (para ser honestos en la reunión)
 
 - No hay integración con ARCA, Caja de Valores, PSP ni core bancario — los datos
-  son ficticios y viven en memoria del servidor.
+  son ficticios, aunque ya persisten en una base real (ver más abajo).
 - No hay tokenización ni blockchain visible — esto es el MVP operativo de SCF/
   confirming (closed-loop), consistente con la recomendación del propio doc de
   arquitectura: "no priorizar blockchain visible al usuario" en esta fase.
-- Autenticación simplificada para demo (sin hash de contraseña, sin 2FA, sin
-  KYC/KYB) — no usar esta base de auth tal cual en producción.
-- Un solo pagador ancla y un solo proveedor cargados; el modelo de datos ya
-  soporta N-a-N para cuando haya más de uno.
+- Autenticación simplificada para demo (sin 2FA, sin KYC/KYB real) — las
+  contraseñas si están hasheadas (`scrypt`), pero no hay recuperación de
+  contraseña, ni signup, ni rotación de credenciales.
+- Sin CSRF tokens en los formularios (mitigado parcialmente por cookies
+  `SameSite=Lax`, pero no es protección completa).
+- Sin rate limiting en el login — nada impide reintentar contraseñas en bucle.
+
+## Base de datos y seguridad (agregado en esta iteración)
+
+- **Persistencia real**: SQLite vía `node:sqlite` (nativo de Node, sin
+  dependencias nuevas). Ver `src/lib/db.ts` para el esquema y la siembra
+  inicial, y `src/lib/data.ts` para cómo el resto del código lee/escribe.
+- **Contraseñas hasheadas**: `scrypt` + salt por usuario (`src/lib/crypto.ts`),
+  nunca texto plano. El tipo `User` ya ni siquiera tiene un campo `password`.
+- **Sin secretos hardcodeados**: `SESSION_SECRET` sale del entorno, nunca del
+  código.
+- **Sin XSS almacenado**: todo texto que puede haber escrito un usuario
+  (razón social, sector, ejecutivo, mensajes de confirmación) se escapa antes
+  de insertarse en el HTML (`esc()` en `src/templates/layout.ts`). Probado
+  con un payload real (`<img src=x onerror="alert(...)">`) en los formularios
+  de alta de pagador e invitación de proveedor.
+- **Validación server-side**: el alta de pagador rechaza con un 400 y un
+  mensaje claro si falta algún campo o el límite de exposición no es un
+  número válido — no alcanza con la validación del navegador.
 
 ## Próximos pasos sugeridos
 
@@ -111,4 +141,7 @@ Mapeado contra el backlog de historias de usuario ya existente en el proyecto:
   aprobaciones (PAG-11) — hoy solo está el loop core de conformidad.
 - E9 portal del proveedor: flujo de descuento completo en 3 pasos con firma digital
   simulada (PROV-05/06/07) — hoy solo está "pedir anticipo" en un paso.
-- Persistencia real (hoy es in-memory) — base de datos + migraciones.
+- CSRF tokens reales en los formularios (hoy solo mitigado por `SameSite=Lax`).
+- Rate limiting en el login para frenar fuerza bruta.
+- Migrar de SQLite a Postgres cuando haga falta multi-tenant real o más de un
+  proceso corriendo en paralelo (SQLite es un solo archivo, un solo escritor).

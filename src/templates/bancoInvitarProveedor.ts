@@ -1,10 +1,10 @@
 import type { User } from "../lib/types.js";
-import { dashboardShell } from "./layout.js";
+import { dashboardShell, esc } from "./layout.js";
 import { pagadores } from "../lib/data.js";
 
 export function bancoInvitarProveedorPage(opts: { user: User }): string {
   const opcionesPagador = pagadores()
-    .map((p) => `<option value="${p.id}">${p.nombre}</option>`)
+    .map((p) => `<option value="${esc(p.id)}">${esc(p.nombre)}</option>`)
     .join("");
 
   const content = `
