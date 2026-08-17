@@ -32,6 +32,7 @@ import {
   invitarProveedor,
   recalcularScoring,
 } from "./lib/data.js";
+import { pagosProvider, firmaDigitalProvider, kycProvider, notificacionesProvider } from "./lib/integraciones/index.js";
 import { bancoMonitoreoPage } from "./templates/bancoMonitoreo.js";
 import { landingPage } from "./templates/landing.js";
 import { loginPage } from "./templates/login.js";
@@ -153,8 +154,23 @@ const server = http.createServer(async (req, res) => {
       const session = requireRole(req, res, "banco");
       if (!session) return;
       const [, id, accion] = bancoAccion;
+      const facturaAntesDeAprobar = facturas.find((f) => f.id === id);
       actualizarEstadoFactura(id, accion === "aprobar" ? "financiada" : "rechazada");
-      const msg = accion === "aprobar" ? "Fondeo aprobado y desembolso simulado con éxito." : "Factura rechazada.";
+      let msg: string;
+      if (accion === "aprobar" && facturaAntesDeAprobar) {
+        const resultado = await pagosProvider.desembolsar(facturaAntesDeAprobar);
+        msg = `Fondeo aprobado. ${resultado.mensaje}`;
+        const proveedor = getEmpresa(facturaAntesDeAprobar.proveedorId);
+        if (proveedor) {
+          await notificacionesProvider.enviar(
+            `contacto@${proveedor.id}.com.ar`,
+            `Tu factura ${facturaAntesDeAprobar.numero} fue aprobada`,
+            `Fondos S.A. aprobó el fondeo de ${facturaAntesDeAprobar.numero}. ${resultado.mensaje}`
+          );
+        }
+      } else {
+        msg = "Factura rechazada.";
+      }
       const fromExplorer = req.headers.referer?.includes("/banco/facturas");
       redirect(res, fromExplorer ? `/banco/facturas?toast=${encodeURIComponent(msg)}` : `/banco?toast=${encodeURIComponent(msg)}`);
       return;
@@ -393,8 +409,12 @@ const server = http.createServer(async (req, res) => {
     if (kybUpgrade && method === "POST") {
       const session = requireRole(req, res, "banco");
       if (!session) return;
-      const p = subirKYBProveedor(kybUpgrade[1]);
-      redirect(res, `/banco/proveedores?toast=${encodeURIComponent(`Upgrade de KYB solicitado — nivel actual ${p?.kyb ?? "L1"}.`)}`);
+      const ORDEN_KYB = ["L1", "L2", "L3"] as const;
+      const actual = getEmpresa(kybUpgrade[1])?.kyb ?? "L1";
+      const objetivo = ORDEN_KYB[Math.min(ORDEN_KYB.indexOf(actual) + 1, ORDEN_KYB.length - 1)];
+      const resultado = await kycProvider.solicitarVerificacion(kybUpgrade[1], objetivo);
+      const p = resultado.ok ? subirKYBProveedor(kybUpgrade[1]) : undefined;
+      redirect(res, `/banco/proveedores?toast=${encodeURIComponent(`${resultado.mensaje} Nivel actual: ${p?.kyb ?? actual}.`)}`);
       return;
     }
 
@@ -477,8 +497,19 @@ const server = http.createServer(async (req, res) => {
       const session = requireRole(req, res, "proveedor");
       if (!session) return;
       const [, id] = proveedorAccion;
+      const factura = facturas.find((f) => f.id === id);
+      const usuarioProveedor = findUserByEmail("pagos@errazuriz.com.ar");
+      const firma = factura
+        ? await firmaDigitalProvider.firmarCesion(factura.id, usuarioProveedor?.nombre ?? "Proveedor")
+        : null;
       actualizarEstadoFactura(id, "pendiente_fondeo");
-      redirect(res, `/proveedor?toast=${encodeURIComponent("Solicitud enviada. Fondos S.A. la revisará para el fondeo.")}`);
+      await notificacionesProvider.enviar(
+        "mesa@fondossa.com.ar",
+        `Nueva solicitud de anticipo — ${factura?.numero ?? id}`,
+        `Un proveedor pidió el anticipo de ${factura?.numero ?? id}. ${firma?.mensaje ?? ""}`
+      );
+      const msgFirma = firma ? ` ${firma.mensaje}` : "";
+      redirect(res, `/proveedor?toast=${encodeURIComponent(`Solicitud enviada. Fondos S.A. la revisará para el fondeo.${msgFirma}`)}`);
       return;
     }
 

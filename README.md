@@ -126,6 +126,19 @@ node scripts/e2e.mjs
   mensaje claro si falta algún campo o el límite de exposición no es un
   número válido — no alcanza con la validación del navegador.
 
+## Integraciones externas (agregado en esta iteración)
+
+`src/lib/integraciones/` tiene un "enchufe" por cada servicio externo que la
+plataforma va a necesitar antes de mover datos y plata reales: Pagos (banco/
+PSP), Firma digital, Verificación de identidad (KYC/KYB), Factura electrónica
+(ARCA) y Notificaciones. Hoy los cinco están en su versión simulada — se
+comportan como si funcionaran, pero no llaman a ningún sistema externo. Tres
+de los cinco ya están conectados a botones reales de la app (aprobar fondeo,
+adelantar, pedir upgrade KYB) para probar el mecanismo sin cambiar lo que se
+ve en pantalla. Ver **[docs/INTEGRACIONES.md](docs/INTEGRACIONES.md)** para
+una explicación de cada uno en lenguaje no técnico, y `.env.example` para las
+variables de entorno que van a hacer falta cuando se conecten de verdad.
+
 ## Próximos pasos sugeridos
 
 Mapeado contra el backlog de historias de usuario ya existente en el proyecto:
