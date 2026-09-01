@@ -116,6 +116,75 @@ export function facturasParaBanco(): Factura[] {
   );
 }
 
+function diasEntreFechas(desde: string, hasta: string): number {
+  const a = new Date(`${desde}T00:00:00`);
+  const b = new Date(`${hasta}T00:00:00`);
+  return Math.round((b.getTime() - a.getTime()) / 86_400_000);
+}
+
+export function calcularMontoNeto(montoBruto: number, tasaAnual: number, dias: number): number {
+  const costo = montoBruto * (tasaAnual / 100) * (dias / 365);
+  return Math.round(montoBruto - costo);
+}
+
+// No hay motor de pricing real todavía (CFG-02/CFG-03 del backlog) — como
+// aproximación razonable, una factura nueva toma la tasa y el score
+// promedio que ya tiene ese pagador en su propio historial. Si el pagador
+// todavía no tiene ninguna factura cargada, usa un default neutro.
+const TASA_DEFAULT = 46.5;
+const SCORE_DEFAULT = 72;
+
+function tasaSugeridaPagador(pagadorId: string): number {
+  const propias = facturasPorPagador(pagadorId);
+  if (propias.length === 0) return TASA_DEFAULT;
+  return Math.round((propias.reduce((acc, f) => acc + f.tasaAnual, 0) / propias.length) * 10) / 10;
+}
+
+function scoreSugeridoPagador(pagadorId: string): number {
+  const promedio = scorePromedioPagador(pagadorId);
+  return promedio > 0 ? promedio : SCORE_DEFAULT;
+}
+
+export function crearFactura(opts: {
+  numero: string;
+  pagadorId: string;
+  proveedorId: string;
+  montoBruto: number;
+  fechaEmision: string;
+  fechaVencimiento: string;
+}): Factura {
+  const diasDescuento = Math.max(1, diasEntreFechas(opts.fechaEmision, opts.fechaVencimiento));
+  const tasaAnual = tasaSugeridaPagador(opts.pagadorId);
+  const scoreRiesgo = scoreSugeridoPagador(opts.pagadorId);
+  const montoNeto = calcularMontoNeto(opts.montoBruto, tasaAnual, diasDescuento);
+  const f: Factura = {
+    id: `fac-${crypto.randomUUID()}`,
+    numero: opts.numero,
+    pagadorId: opts.pagadorId,
+    proveedorId: opts.proveedorId,
+    montoBruto: opts.montoBruto,
+    fechaEmision: opts.fechaEmision,
+    fechaVencimiento: opts.fechaVencimiento,
+    estado: "pendiente_validacion",
+    scoreRiesgo,
+    tasaAnual,
+    diasDescuento,
+    montoNeto,
+    moneda: "ARS",
+  };
+  facturas.push(f);
+  db.prepare(`
+    INSERT INTO facturas (id, numero, pagadorId, proveedorId, montoBruto, fechaEmision, fechaVencimiento,
+      estado, scoreRiesgo, tasaAnual, diasDescuento, montoNeto, moneda, revisionManualL2, bloqueadaAntifraude)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ARS', 0, 0)
+  `).run(f.id, f.numero, f.pagadorId, f.proveedorId, f.montoBruto, f.fechaEmision, f.fechaVencimiento, f.estado, f.scoreRiesgo, f.tasaAnual, f.diasDescuento, f.montoNeto);
+  return f;
+}
+
+export function existeNumeroFacturaParaPagador(pagadorId: string, numero: string): boolean {
+  return facturas.some((f) => f.pagadorId === pagadorId && f.numero.trim().toLowerCase() === numero.trim().toLowerCase());
+}
+
 export function actualizarEstadoFactura(id: string, estado: Factura["estado"]) {
   const f = facturas.find((x) => x.id === id);
   if (f) {

@@ -31,9 +31,14 @@ import {
   toggleBloqueoAntifraudeProveedor,
   invitarProveedor,
   recalcularScoring,
+  proveedoresDePagador,
+  crearFactura,
+  existeNumeroFacturaParaPagador,
 } from "./lib/data.js";
 import { pagosProvider, firmaDigitalProvider, kycProvider, notificacionesProvider } from "./lib/integraciones/index.js";
 import { bancoMonitoreoPage } from "./templates/bancoMonitoreo.js";
+import { pagadorFacturasPage } from "./templates/pagadorFacturas.js";
+import { pagadorAltaFacturaPage } from "./templates/pagadorAltaFactura.js";
 import { landingPage } from "./templates/landing.js";
 import { loginPage } from "./templates/login.js";
 import { bancoDashboard } from "./templates/dashboardBanco.js";
@@ -483,6 +488,71 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // --- Pagador · Mis facturas (listado + alta) ---
+    if (pathname === "/pagador/facturas" && method === "GET") {
+      const session = requireRole(req, res, "pagador");
+      if (!session) return;
+      const user = findUserByEmail("finanzas@ypf.com.ar")!;
+      send(res, 200, pagadorFacturasPage({ user, facturas: facturasPorPagador(user.empresaId), toast }));
+      return;
+    }
+
+    if (pathname === "/pagador/facturas/nueva" && method === "GET") {
+      const session = requireRole(req, res, "pagador");
+      if (!session) return;
+      const user = findUserByEmail("finanzas@ypf.com.ar")!;
+      send(res, 200, pagadorAltaFacturaPage({ user, proveedoresHabilitados: proveedoresDePagador(user.empresaId) }));
+      return;
+    }
+
+    if (pathname === "/pagador/facturas/nueva" && method === "POST") {
+      const session = requireRole(req, res, "pagador");
+      if (!session) return;
+      const body = await readBody(req);
+      const user = findUserByEmail("finanzas@ypf.com.ar")!;
+      const proveedorId = (body.get("proveedorId") ?? "").trim();
+      const numero = (body.get("numero") ?? "").trim();
+      const montoBrutoRaw = body.get("montoBruto") ?? "";
+      const montoBruto = Number(montoBrutoRaw);
+      const fechaEmision = (body.get("fechaEmision") ?? "").trim();
+      const fechaVencimiento = (body.get("fechaVencimiento") ?? "").trim();
+
+      const proveedoresHabilitados = proveedoresDePagador(user.empresaId);
+      const values = { proveedorId, numero, montoBruto: montoBrutoRaw, fechaEmision, fechaVencimiento };
+      const conError = (error: string) => {
+        send(res, 400, pagadorAltaFacturaPage({ user, proveedoresHabilitados, values, error }));
+      };
+
+      if (!proveedoresHabilitados.some((p) => p.id === proveedorId)) {
+        conError("Elegí un proveedor válido de tu cadena habilitada.");
+        return;
+      }
+      if (!numero) {
+        conError("Ingresá el número de factura.");
+        return;
+      }
+      if (existeNumeroFacturaParaPagador(user.empresaId, numero)) {
+        conError(`Ya cargaste una factura con el número "${numero}". Revisá que no esté duplicada.`);
+        return;
+      }
+      if (!Number.isFinite(montoBruto) || montoBruto <= 0) {
+        conError("El monto tiene que ser un número mayor a cero.");
+        return;
+      }
+      if (!fechaEmision || !fechaVencimiento) {
+        conError("Completá las dos fechas.");
+        return;
+      }
+      if (fechaVencimiento <= fechaEmision) {
+        conError("La fecha de vencimiento tiene que ser posterior a la fecha de emisión.");
+        return;
+      }
+
+      const factura = crearFactura({ numero, pagadorId: user.empresaId, proveedorId, montoBruto, fechaEmision, fechaVencimiento });
+      redirect(res, `/pagador?toast=${encodeURIComponent(`Factura ${factura.numero} cargada — ya está pendiente de tu conformidad.`)}`);
+      return;
+    }
+
     // --- Proveedor portal ---
     if (pathname === "/proveedor" && method === "GET") {
       const session = requireRole(req, res, "proveedor");
@@ -516,7 +586,6 @@ const server = http.createServer(async (req, res) => {
     // --- Stub pages (secondary nav items not built yet in this iteration) ---
     const STUBS: Record<string, { role: Role; title: string; empresa: string; userEmail: string }> = {
       "/banco/limites": { role: "banco", title: "Límites y política", empresa: "Fondos S.A.", userEmail: "mesa@fondossa.com.ar" },
-      "/pagador/facturas": { role: "pagador", title: "Mis facturas", empresa: "YPF S.A.", userEmail: "finanzas@ypf.com.ar" },
       "/pagador/proveedores": { role: "pagador", title: "Proveedores", empresa: "YPF S.A.", userEmail: "finanzas@ypf.com.ar" },
       "/pagador/equipo": { role: "pagador", title: "Equipo y reglas", empresa: "YPF S.A.", userEmail: "finanzas@ypf.com.ar" },
       "/proveedor/facturas": { role: "proveedor", title: "Facturas elegibles", empresa: "Errázuriz S.A.", userEmail: "pagos@errazuriz.com.ar" },
