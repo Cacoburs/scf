@@ -20,6 +20,8 @@ import {
   toggleRevisionManualL2,
   toggleBloqueadaAntifraude,
   ampliarLimitePagador,
+  establecerLimiteExposicion,
+  establecerTasaBasePagador,
   toggleWatchlistPagador,
   toggleBloqueoCesionesPagador,
   reasignarEjecutivoPagador,
@@ -59,6 +61,7 @@ import { bancoProveedoresPage } from "./templates/bancoProveedores.js";
 import { bancoInvitarProveedorPage } from "./templates/bancoInvitarProveedor.js";
 import { bancoScoringPage } from "./templates/bancoScoring.js";
 import { stubPage } from "./templates/stub.js";
+import { bancoLimitesPage } from "./templates/bancoLimites.js";
 import type { Role } from "./lib/types.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -209,6 +212,7 @@ const server = http.createServer(async (req, res) => {
           todas: facturas,
           estadoFiltro: url.searchParams.get("estado") ?? undefined,
           pagadorFiltro: url.searchParams.get("pagador") ?? undefined,
+          busqueda: url.searchParams.get("q") ?? undefined,
           page: Number(url.searchParams.get("page") ?? 1),
           toast,
         })
@@ -222,8 +226,17 @@ const server = http.createServer(async (req, res) => {
       let lista = facturas;
       const estadoFiltro = url.searchParams.get("estado");
       const pagadorFiltro = url.searchParams.get("pagador");
+      const busqueda = url.searchParams.get("q")?.trim().toLowerCase();
       if (estadoFiltro) lista = lista.filter((f) => f.estado === estadoFiltro);
       if (pagadorFiltro) lista = lista.filter((f) => f.pagadorId === pagadorFiltro);
+      if (busqueda) {
+        lista = lista.filter(
+          (f) =>
+            f.numero.toLowerCase().includes(busqueda) ||
+            (getEmpresa(f.pagadorId)?.cuit ?? "").toLowerCase().includes(busqueda) ||
+            (getEmpresa(f.proveedorId)?.cuit ?? "").toLowerCase().includes(busqueda)
+        );
+      }
       const header = "numero,pagador,proveedor,vencimiento,montoBruto,montoNeto,scoreRiesgo,estado\n";
       const rows = lista
         .map((f) =>
@@ -304,6 +317,35 @@ const server = http.createServer(async (req, res) => {
       const p = toggleBloqueoCesionesPagador(bloqueoCesiones[1]);
       const msg = p?.bloqueadoCesiones ? "Nuevas cesiones bloqueadas para este pagador." : "Cesiones reactivadas.";
       redirect(res, `/banco/cartera?toast=${encodeURIComponent(msg)}`);
+      return;
+    }
+
+    // --- Banco · límites y política (asignar línea y tasa base por pagador) ---
+    if (pathname === "/banco/limites" && method === "GET") {
+      const session = requireRole(req, res, "banco");
+      if (!session) return;
+      const user = findUserByEmail("mesa@fondossa.com.ar")!;
+      send(res, 200, bancoLimitesPage({ user, toast }));
+      return;
+    }
+
+    const limiteMatch = pathname.match(/^\/banco\/pagadores\/([\w-]+)\/limite$/);
+    if (limiteMatch && method === "POST") {
+      const session = requireRole(req, res, "banco");
+      if (!session) return;
+      const body = await readBody(req);
+      establecerLimiteExposicion(limiteMatch[1], Number(body.get("limite")));
+      redirect(res, `/banco/limites?toast=${encodeURIComponent("Límite de exposición actualizado.")}`);
+      return;
+    }
+
+    const tasaBaseMatch = pathname.match(/^\/banco\/pagadores\/([\w-]+)\/tasa-base$/);
+    if (tasaBaseMatch && method === "POST") {
+      const session = requireRole(req, res, "banco");
+      if (!session) return;
+      const body = await readBody(req);
+      establecerTasaBasePagador(tasaBaseMatch[1], Number(body.get("tasaBase")));
+      redirect(res, `/banco/limites?toast=${encodeURIComponent("Tasa base actualizada.")}`);
       return;
     }
 
@@ -556,7 +598,7 @@ const server = http.createServer(async (req, res) => {
       const session = requireRole(req, res, "pagador");
       if (!session) return;
       const user = findUserByEmail("finanzas@ypf.com.ar")!;
-      send(res, 200, pagadorFacturasPage({ user, facturas: facturasPorPagador(user.empresaId), toast }));
+      send(res, 200, pagadorFacturasPage({ user, facturas: facturasPorPagador(user.empresaId), toast, busqueda: url.searchParams.get("q") ?? undefined }));
       return;
     }
 
@@ -632,7 +674,7 @@ const server = http.createServer(async (req, res) => {
       const facturasNuevas = new Set(notificacionesPendientes("proveedor", "conformidad").map((n) => n.facturaId));
       const acreditaciones = notificacionesPendientes("proveedor", "acreditacion");
       marcarNotificacionesVistas("proveedor");
-      send(res, 200, proveedorDashboard({ user, facturas: facturasPorProveedor(user.empresaId), toast, facturasNuevas, acreditaciones }));
+      send(res, 200, proveedorDashboard({ user, facturas: facturasPorProveedor(user.empresaId), toast, facturasNuevas, acreditaciones, busqueda: url.searchParams.get("q") ?? undefined }));
       return;
     }
 
@@ -675,7 +717,6 @@ const server = http.createServer(async (req, res) => {
 
     // --- Stub pages (secondary nav items not built yet in this iteration) ---
     const STUBS: Record<string, { role: Role; title: string; empresa: string; userEmail: string }> = {
-      "/banco/limites": { role: "banco", title: "Límites y política", empresa: "Fondos S.A.", userEmail: "mesa@fondossa.com.ar" },
       "/pagador/proveedores": { role: "pagador", title: "Proveedores", empresa: "YPF S.A.", userEmail: "finanzas@ypf.com.ar" },
       "/pagador/equipo": { role: "pagador", title: "Equipo y reglas", empresa: "YPF S.A.", userEmail: "finanzas@ypf.com.ar" },
       "/proveedor/facturas": { role: "proveedor", title: "Facturas elegibles", empresa: "Errázuriz S.A.", userEmail: "pagos@errazuriz.com.ar" },

@@ -1,5 +1,6 @@
 import type { Factura, Notificacion, User } from "../lib/types.js";
-import { dashboardShell, money, formatDate, estadoPill, esc } from "./layout.js";
+import { dashboardShell, money, formatDate, estadoPill, esc, teaDesde } from "./layout.js";
+import { getEmpresa } from "../lib/data.js";
 
 export function proveedorDashboard(opts: {
   user: User;
@@ -7,11 +8,19 @@ export function proveedorDashboard(opts: {
   toast?: string;
   facturasNuevas?: Set<string>;
   acreditaciones?: Notificacion[];
+  busqueda?: string;
 }): string {
   const facturasNuevas = opts.facturasNuevas ?? new Set<string>();
   const acreditaciones = opts.acreditaciones ?? [];
-  const elegibles = opts.facturas.filter((f) => f.estado === "elegible");
-  const enTramite = opts.facturas.filter((f) => f.estado === "pendiente_fondeo");
+  let facturasFiltradas = opts.facturas;
+  if (opts.busqueda) {
+    const q = opts.busqueda.trim().toLowerCase();
+    facturasFiltradas = facturasFiltradas.filter(
+      (f) => f.numero.toLowerCase().includes(q) || (getEmpresa(f.pagadorId)?.cuit ?? "").toLowerCase().includes(q)
+    );
+  }
+  const elegibles = facturasFiltradas.filter((f) => f.estado === "elegible");
+  const enTramite = facturasFiltradas.filter((f) => f.estado === "pendiente_fondeo");
   const cobradasOFinanciadas = opts.facturas.filter((f) =>
     ["financiada", "cobrada"].includes(f.estado)
   );
@@ -23,7 +32,7 @@ export function proveedorDashboard(opts: {
 
   const filaElegible = (f: Factura) => {
     const costo = f.montoBruto - f.montoNeto;
-    const tea = (Math.pow(1 + f.tasaAnual / 100 / 365, 365) - 1) * 100;
+    const tea = teaDesde(f.tasaAnual);
     const esNueva = facturasNuevas.has(f.id);
     return `
       <tr class="${esNueva ? "row-nuevo" : ""}">
@@ -98,6 +107,12 @@ export function proveedorDashboard(opts: {
       </div>
     </div>
 
+    <form method="get" action="/proveedor" class="toolbar">
+      <input type="search" name="q" class="text-input" placeholder="Buscar por N° de factura o CUIT del pagador" value="${esc(opts.busqueda)}" />
+      <button class="mini-btn" type="submit">Buscar</button>
+      ${opts.busqueda ? `<a class="mini-btn" href="/proveedor">Limpiar</a>` : ""}
+    </form>
+
     <div class="panel" id="elegibles">
       <div class="panel-header">
         <div>
@@ -107,7 +122,7 @@ export function proveedorDashboard(opts: {
       </div>
       ${
         elegibles.length === 0
-          ? `<div class="empty-note">No tenés facturas elegibles en este momento.</div>`
+          ? `<div class="empty-note">${opts.busqueda ? "No hay facturas elegibles que coincidan con la búsqueda." : "No tenés facturas elegibles en este momento."}</div>`
           : `<table>
         <thead><tr>
           <th>Factura</th><th>Vencimiento</th><th class="num">Bruto</th><th class="num">Neto hoy</th>

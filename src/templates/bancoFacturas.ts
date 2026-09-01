@@ -29,13 +29,28 @@ export function bancoFacturasPage(opts: {
   todas: Factura[];
   estadoFiltro?: string;
   pagadorFiltro?: string;
+  busqueda?: string;
   page: number;
   toast?: string;
 }): string {
   let lista = opts.todas;
   if (opts.estadoFiltro) lista = lista.filter((f) => f.estado === opts.estadoFiltro);
   if (opts.pagadorFiltro) lista = lista.filter((f) => f.pagadorId === opts.pagadorFiltro);
-  lista = [...lista].sort((a, b) => a.fechaVencimiento.localeCompare(b.fechaVencimiento));
+  if (opts.busqueda) {
+    const q = opts.busqueda.trim().toLowerCase();
+    lista = lista.filter(
+      (f) =>
+        f.numero.toLowerCase().includes(q) ||
+        (getEmpresa(f.pagadorId)?.cuit ?? "").toLowerCase().includes(q) ||
+        (getEmpresa(f.proveedorId)?.cuit ?? "").toLowerCase().includes(q)
+    );
+  }
+  // Las que esperan una decisión de fondeo van primero — es lo más urgente para la mesa.
+  lista = [...lista].sort((a, b) => {
+    const prioridad = (f: Factura) => (f.estado === "pendiente_fondeo" ? 0 : 1);
+    const dif = prioridad(a) - prioridad(b);
+    return dif !== 0 ? dif : a.fechaVencimiento.localeCompare(b.fechaVencimiento);
+  });
 
   const totalPaginas = Math.max(1, Math.ceil(lista.length / PAGE_SIZE));
   const page = Math.min(Math.max(1, opts.page), totalPaginas);
@@ -45,6 +60,7 @@ export function bancoFacturasPage(opts: {
     const params = new URLSearchParams();
     if (opts.estadoFiltro) params.set("estado", opts.estadoFiltro);
     if (opts.pagadorFiltro) params.set("pagador", opts.pagadorFiltro);
+    if (opts.busqueda) params.set("q", opts.busqueda);
     for (const [k, v] of Object.entries(extra)) params.set(k, String(v));
     return `?${params.toString()}`;
   };
@@ -110,6 +126,7 @@ export function bancoFacturasPage(opts: {
         <a class="mini-btn" href="/banco/facturas/exportar.csv${qs({})}">Exportar CSV</a>
       </div>
       <form method="get" action="/banco/facturas" class="toolbar">
+        <input type="search" name="q" class="text-input" placeholder="Buscar por N° de factura o CUIT" value="${esc(opts.busqueda)}" />
         <select name="estado" class="select-input" onchange="this.form.submit()">
           <option value="">Todos los estados</option>
           ${optionsEstado}
@@ -118,7 +135,8 @@ export function bancoFacturasPage(opts: {
           <option value="">Todos los pagadores</option>
           ${optionsPagador}
         </select>
-        ${opts.estadoFiltro || opts.pagadorFiltro ? `<a class="mini-btn" href="/banco/facturas">Limpiar filtros</a>` : ""}
+        <button class="mini-btn" type="submit">Buscar</button>
+        ${opts.estadoFiltro || opts.pagadorFiltro || opts.busqueda ? `<a class="mini-btn" href="/banco/facturas">Limpiar filtros</a>` : ""}
         <span class="toolbar-count">${lista.length} factura${lista.length === 1 ? "" : "s"}</span>
       </form>
       ${

@@ -27,6 +27,7 @@ function rowToEmpresa(row: any): Empresa {
     lifecyclePagador: row.lifecyclePagador ?? undefined,
     ejecutivo: row.ejecutivo ?? undefined,
     limiteExposicion: row.limiteExposicion ?? undefined,
+    tasaBase: row.tasaBase ?? undefined,
     watchlist: row.watchlist != null ? toBool(row.watchlist) : undefined,
     bloqueadoCesiones: row.bloqueadoCesiones != null ? toBool(row.bloqueadoCesiones) : undefined,
     lifecycleProveedor: row.lifecycleProveedor ?? undefined,
@@ -148,6 +149,8 @@ const TASA_DEFAULT = 46.5;
 const SCORE_DEFAULT = 72;
 
 function tasaSugeridaPagador(pagadorId: string): number {
+  const empresa = getEmpresa(pagadorId);
+  if (empresa?.tasaBase != null) return empresa.tasaBase;
   const propias = facturasPorPagador(pagadorId);
   if (propias.length === 0) return TASA_DEFAULT;
   return Math.round((propias.reduce((acc, f) => acc + f.tasaAnual, 0) / propias.length) * 10) / 10;
@@ -287,6 +290,26 @@ export function ampliarLimitePagador(id: string, factor: number) {
   if (e && e.limiteExposicion) {
     e.limiteExposicion = Math.round(e.limiteExposicion * factor);
     db.prepare("UPDATE empresas SET limiteExposicion = ? WHERE id = ?").run(e.limiteExposicion, id);
+  }
+  return e;
+}
+
+// Límites y política (OPS-?? — mesa de fondeo define el límite de exposición
+// y la tasa base por pagador, en vez de que quede implícita en el histórico).
+export function establecerLimiteExposicion(id: string, limite: number) {
+  const e = empresas.find((x) => x.id === id);
+  if (e && Number.isFinite(limite) && limite >= 0) {
+    e.limiteExposicion = Math.round(limite);
+    db.prepare("UPDATE empresas SET limiteExposicion = ? WHERE id = ?").run(e.limiteExposicion, id);
+  }
+  return e;
+}
+
+export function establecerTasaBasePagador(id: string, tasaBase: number) {
+  const e = empresas.find((x) => x.id === id);
+  if (e && Number.isFinite(tasaBase) && tasaBase > 0) {
+    e.tasaBase = Math.round(tasaBase * 10) / 10;
+    db.prepare("UPDATE empresas SET tasaBase = ? WHERE id = ?").run(e.tasaBase, id);
   }
   return e;
 }

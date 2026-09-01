@@ -25,6 +25,7 @@ export interface Empresa {
   lifecyclePagador?: LifecyclePagador;
   ejecutivo?: string;
   limiteExposicion?: number;
+  tasaBase?: number; // TNA % que fija el Fondo como política de precio para este pagador
   watchlist?: boolean;
   bloqueadoCesiones?: boolean;
 

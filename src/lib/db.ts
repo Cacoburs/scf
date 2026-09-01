@@ -23,6 +23,7 @@ db.exec(`
     lifecyclePagador TEXT,
     ejecutivo TEXT,
     limiteExposicion REAL,
+    tasaBase REAL,
     watchlist INTEGER,
     bloqueadoCesiones INTEGER,
     lifecycleProveedor TEXT,
@@ -88,6 +89,12 @@ if (!columnasFacturas.some((c) => c.name === "fechaFinanciacion")) {
     UPDATE facturas SET fechaFinanciacion = date(fechaEmision, '+2 days')
     WHERE estado IN ('financiada', 'cobrada') AND fechaFinanciacion IS NULL
   `).run();
+}
+
+// Migración: política de tasa base por pagador (Límites y política, "Fondos S.A.").
+const columnasEmpresas = db.prepare("PRAGMA table_info(empresas)").all() as { name: string }[];
+if (!columnasEmpresas.some((c) => c.name === "tasaBase")) {
+  db.exec("ALTER TABLE empresas ADD COLUMN tasaBase REAL");
 }
 
 // ---------------------------------------------------------------------------
