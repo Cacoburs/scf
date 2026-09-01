@@ -34,7 +34,11 @@ import {
   proveedoresDePagador,
   crearFactura,
   existeNumeroFacturaParaPagador,
+  crearNotificacion,
+  notificacionesPendientes,
+  marcarNotificacionesVistas,
 } from "./lib/data.js";
+import { money } from "./templates/layout.js";
 import { pagosProvider, firmaDigitalProvider, kycProvider, notificacionesProvider } from "./lib/integraciones/index.js";
 import { bancoMonitoreoPage } from "./templates/bancoMonitoreo.js";
 import { pagadorFacturasPage } from "./templates/pagadorFacturas.js";
@@ -150,7 +154,9 @@ const server = http.createServer(async (req, res) => {
       const session = requireRole(req, res, "banco");
       if (!session) return;
       const user = findUserByEmail("mesa@fondossa.com.ar")!;
-      send(res, 200, bancoDashboard({ user, facturas: facturasParaBanco(), toast }));
+      const facturasNuevas = new Set(notificacionesPendientes("banco", "solicitud").map((n) => n.facturaId));
+      marcarNotificacionesVistas("banco");
+      send(res, 200, bancoDashboard({ user, facturas: facturasParaBanco(), toast, facturasNuevas }));
       return;
     }
 
@@ -165,6 +171,12 @@ const server = http.createServer(async (req, res) => {
       if (accion === "aprobar" && facturaAntesDeAprobar) {
         const resultado = await pagosProvider.desembolsar(facturaAntesDeAprobar);
         msg = `Fondeo aprobado. ${resultado.mensaje}`;
+        crearNotificacion({
+          role: "proveedor",
+          facturaId: id,
+          tipo: "acreditacion",
+          mensaje: `Se acreditaron ${money(facturaAntesDeAprobar.montoNeto)} sobre la factura ${facturaAntesDeAprobar.numero}.`,
+        });
         const proveedor = getEmpresa(facturaAntesDeAprobar.proveedorId);
         if (proveedor) {
           await notificacionesProvider.enviar(
@@ -483,7 +495,16 @@ const server = http.createServer(async (req, res) => {
       const session = requireRole(req, res, "pagador");
       if (!session) return;
       const [, id] = pagadorAccion;
+      const facturaConformada = facturas.find((f) => f.id === id);
       actualizarEstadoFactura(id, "elegible");
+      if (facturaConformada) {
+        crearNotificacion({
+          role: "proveedor",
+          facturaId: id,
+          tipo: "conformidad",
+          mensaje: `${facturaConformada.numero} ya tiene tu conformidad — disponible para pedir el anticipo.`,
+        });
+      }
       redirect(res, `/pagador?toast=${encodeURIComponent("Conformidad registrada. La factura ya es elegible para el proveedor.")}`);
       return;
     }
@@ -558,7 +579,10 @@ const server = http.createServer(async (req, res) => {
       const session = requireRole(req, res, "proveedor");
       if (!session) return;
       const user = findUserByEmail("pagos@errazuriz.com.ar")!;
-      send(res, 200, proveedorDashboard({ user, facturas: facturasPorProveedor(user.empresaId), toast }));
+      const facturasNuevas = new Set(notificacionesPendientes("proveedor", "conformidad").map((n) => n.facturaId));
+      const acreditaciones = notificacionesPendientes("proveedor", "acreditacion");
+      marcarNotificacionesVistas("proveedor");
+      send(res, 200, proveedorDashboard({ user, facturas: facturasPorProveedor(user.empresaId), toast, facturasNuevas, acreditaciones }));
       return;
     }
 
@@ -573,6 +597,14 @@ const server = http.createServer(async (req, res) => {
         ? await firmaDigitalProvider.firmarCesion(factura.id, usuarioProveedor?.nombre ?? "Proveedor")
         : null;
       actualizarEstadoFactura(id, "pendiente_fondeo");
+      if (factura) {
+        crearNotificacion({
+          role: "banco",
+          facturaId: id,
+          tipo: "solicitud",
+          mensaje: `${factura.numero} — nueva solicitud de anticipo por ${money(factura.montoNeto)}.`,
+        });
+      }
       await notificacionesProvider.enviar(
         "mesa@fondossa.com.ar",
         `Nueva solicitud de anticipo — ${factura?.numero ?? id}`,

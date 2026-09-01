@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { db, ensureSeeded } from "./db.js";
 import { verifyPassword } from "./crypto.js";
-import type { Empresa, Factura, Role, User } from "./types.js";
+import type { Empresa, Factura, Notificacion, Role, TipoNotificacion, User } from "./types.js";
 
 // ---------------------------------------------------------------------------
 // Esta capa habla con SQLite (ver ./db.ts). Los arrays de abajo se cargan una
@@ -59,6 +59,18 @@ function rowToFactura(row: any): Factura {
 
 function rowToUser(row: any): User {
   return { id: row.id, email: row.email, role: row.role, nombre: row.nombre, cargo: row.cargo, empresaId: row.empresaId };
+}
+
+function rowToNotificacion(row: any): Notificacion {
+  return {
+    id: row.id,
+    role: row.role,
+    facturaId: row.facturaId,
+    tipo: row.tipo,
+    mensaje: row.mensaje,
+    creadoEn: row.creadoEn,
+    visto: toBool(row.visto),
+  };
 }
 
 function initialsOf(nombre: string): string {
@@ -507,4 +519,30 @@ export function desembolsoPorMes(): DesembolsoPorGrupo[] {
     grupos.set(mes, g);
   }
   return [...grupos.values()].sort((a, b) => a.clave.localeCompare(b.clave));
+}
+
+// ---------------------------------------------------------------------------
+// Notificaciones in-app. A diferencia de empresas/facturas/users, esto NO se
+// carga a un array en memoria al arrancar — se consulta directo a SQLite en
+// cada llamada. Son pocas lecturas (una o dos por request, solo en las
+// páginas "home" de banco y proveedor) y así no hay que mantener un array
+// más sincronizado; para algo tan chico, la lectura directa es más simple.
+// ---------------------------------------------------------------------------
+
+export function crearNotificacion(opts: { role: Role; facturaId: string; tipo: TipoNotificacion; mensaje: string }) {
+  db.prepare(`
+    INSERT INTO notificaciones (id, role, facturaId, tipo, mensaje, creadoEn, visto)
+    VALUES (?, ?, ?, ?, ?, ?, 0)
+  `).run(`notif-${crypto.randomUUID()}`, opts.role, opts.facturaId, opts.tipo, opts.mensaje, new Date().toISOString());
+}
+
+export function notificacionesPendientes(role: Role, tipo?: TipoNotificacion): Notificacion[] {
+  const rows = tipo
+    ? db.prepare("SELECT * FROM notificaciones WHERE role = ? AND tipo = ? AND visto = 0 ORDER BY creadoEn ASC").all(role, tipo)
+    : db.prepare("SELECT * FROM notificaciones WHERE role = ? AND visto = 0 ORDER BY creadoEn ASC").all(role);
+  return (rows as any[]).map(rowToNotificacion);
+}
+
+export function marcarNotificacionesVistas(role: Role) {
+  db.prepare("UPDATE notificaciones SET visto = 1 WHERE role = ? AND visto = 0").run(role);
 }

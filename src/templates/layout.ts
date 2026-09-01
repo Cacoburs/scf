@@ -1,4 +1,5 @@
 import type { Role, User } from "../lib/types.js";
+import { notificacionesPendientes } from "../lib/data.js";
 
 // Escapa cualquier texto que haya podido escribir un usuario (nombre de
 // empresa, ejecutivo, sector, etc.) antes de insertarlo en el HTML. Sin esto,
@@ -31,15 +32,16 @@ ${body}
 </html>`;
 }
 
-const NAV_BY_ROLE: Record<Role, { section: string; items: { href: string; label: string; icon: string }[] }[]> = {
+const NAV_BY_ROLE: Record<Role, { section: string; items: { href: string; label: string; icon: string; badge?: boolean }[] }[]> = {
   banco: [
     {
       section: "Mesa de fondeo",
       items: [
-        { href: "/banco", label: "Vista global", icon: "◆" },
+        { href: "/banco", label: "Vista global", icon: "◆", badge: true },
         { href: "/banco/facturas", label: "Facturas a fondear", icon: "▤" },
         { href: "/banco/cartera", label: "Cartera activa", icon: "▥" },
         { href: "/banco/monitoreo", label: "Monitoreo de fondeo", icon: "▦" },
+        { href: "/banco/historial", label: "Historial", icon: "▧" },
       ],
     },
     {
@@ -64,6 +66,7 @@ const NAV_BY_ROLE: Record<Role, { section: string; items: { href: string; label:
         { href: "/pagador", label: "Vista general", icon: "◆" },
         { href: "/pagador/facturas", label: "Mis facturas", icon: "▤" },
         { href: "/pagador/proveedores", label: "Proveedores", icon: "◈" },
+        { href: "/pagador/historial", label: "Historial", icon: "▧" },
       ],
     },
     {
@@ -77,7 +80,7 @@ const NAV_BY_ROLE: Record<Role, { section: string; items: { href: string; label:
     {
       section: "Mi cuenta",
       items: [
-        { href: "/proveedor", label: "Inicio — liquidez", icon: "◆" },
+        { href: "/proveedor", label: "Inicio — liquidez", icon: "◆", badge: true },
         { href: "/proveedor/facturas", label: "Facturas elegibles", icon: "▤" },
         { href: "/proveedor/historial", label: "Historial", icon: "▥" },
       ],
@@ -122,6 +125,12 @@ export function dashboardShell(opts: {
     .join("")
     .toUpperCase();
 
+  // Cantidad de notificaciones sin ver de este rol — se muestra como badge
+  // en el ítem de nav marcado como "badge: true" (la home de ese portal).
+  // Se recalcula en cada página: si el usuario ya visitó la home y ahí se
+  // marcaron como vistas, en el resto de las páginas ya aparece en 0.
+  const pendientesNotif = notificacionesPendientes(opts.role).length;
+
   const navHtml = nav
     .map(
       (section) => `
@@ -130,6 +139,7 @@ export function dashboardShell(opts: {
         .map(
           (item) => `<a href="${item.href}" class="${item.href === opts.activeHref ? "active" : ""}">
             <span>${item.icon}</span><span>${item.label}</span>
+            ${item.badge && pendientesNotif > 0 ? `<span class="nav-badge">${pendientesNotif}</span>` : ""}
           </a>`
         )
         .join("\n")}

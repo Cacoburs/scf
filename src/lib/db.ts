@@ -65,6 +65,16 @@ db.exec(`
     key TEXT PRIMARY KEY,
     value TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS notificaciones (
+    id TEXT PRIMARY KEY,
+    role TEXT NOT NULL,
+    facturaId TEXT NOT NULL,
+    tipo TEXT NOT NULL,
+    mensaje TEXT NOT NULL,
+    creadoEn TEXT NOT NULL,
+    visto INTEGER NOT NULL DEFAULT 0
+  );
 `);
 
 // ---------------------------------------------------------------------------

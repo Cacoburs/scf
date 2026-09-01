@@ -64,3 +64,18 @@ export interface Factura {
   revisionManualL2?: boolean;
   bloqueadaAntifraude?: boolean;
 }
+
+// Notificaciones in-app — sin proveedor de email/SMS conectado todavía (ver
+// docs/INTEGRACIONES.md), esto es lo único que hoy avisa a alguien que pasó
+// algo sin que tenga que estar mirando la pantalla en ese momento exacto.
+export type TipoNotificacion = "conformidad" | "solicitud" | "acreditacion";
+
+export interface Notificacion {
+  id: string;
+  role: Role; // a qué portal le pertenece
+  facturaId: string;
+  tipo: TipoNotificacion;
+  mensaje: string;
+  creadoEn: string;
+  visto: boolean;
+}

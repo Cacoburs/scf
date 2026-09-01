@@ -1,11 +1,15 @@
-import type { Factura, User } from "../lib/types.js";
+import type { Factura, Notificacion, User } from "../lib/types.js";
 import { dashboardShell, money, formatDate, estadoPill, esc } from "./layout.js";
 
 export function proveedorDashboard(opts: {
   user: User;
   facturas: Factura[];
   toast?: string;
+  facturasNuevas?: Set<string>;
+  acreditaciones?: Notificacion[];
 }): string {
+  const facturasNuevas = opts.facturasNuevas ?? new Set<string>();
+  const acreditaciones = opts.acreditaciones ?? [];
   const elegibles = opts.facturas.filter((f) => f.estado === "elegible");
   const enTramite = opts.facturas.filter((f) => f.estado === "pendiente_fondeo");
   const cobradasOFinanciadas = opts.facturas.filter((f) =>
@@ -20,9 +24,10 @@ export function proveedorDashboard(opts: {
   const filaElegible = (f: Factura) => {
     const costo = f.montoBruto - f.montoNeto;
     const tea = (Math.pow(1 + f.tasaAnual / 100 / 365, 365) - 1) * 100;
+    const esNueva = facturasNuevas.has(f.id);
     return `
-      <tr>
-        <td class="mono">${esc(f.numero)}</td>
+      <tr class="${esNueva ? "row-nuevo" : ""}">
+        <td class="mono">${esc(f.numero)}${esNueva ? '<span class="chip-nuevo">Nuevo</span>' : ""}</td>
         <td>${formatDate(f.fechaVencimiento)}</td>
         <td class="num">${money(f.montoBruto, f.moneda)}</td>
         <td class="num" style="color:var(--teal-600);font-weight:700;">${money(f.montoNeto, f.moneda)}</td>
@@ -44,8 +49,23 @@ export function proveedorDashboard(opts: {
         <td>${estadoPill(f.estado)}</td>
       </tr>`;
 
+  const bannerAcreditacion =
+    acreditaciones.length === 0
+      ? ""
+      : `
+    <div class="acreditacion-banner">
+      <div class="acreditacion-icon">$</div>
+      <div>
+        <div class="acreditacion-title">${
+          acreditaciones.length === 1 ? "¡Tenés un cobro nuevo!" : `¡Tenés ${acreditaciones.length} cobros nuevos!`
+        }</div>
+        ${acreditaciones.map((n) => `<div class="acreditacion-item">${esc(n.mensaje)}</div>`).join("")}
+      </div>
+    </div>`;
+
   const content = `
     ${opts.toast ? `<div class="toast-banner show">${esc(opts.toast)}</div>` : ""}
+    ${bannerAcreditacion}
 
     <div class="hero-liquidity">
       <div>

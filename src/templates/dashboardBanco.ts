@@ -6,7 +6,9 @@ export function bancoDashboard(opts: {
   user: User;
   facturas: Factura[];
   toast?: string;
+  facturasNuevas?: Set<string>;
 }): string {
+  const facturasNuevas = opts.facturasNuevas ?? new Set<string>();
   const cola = opts.facturas.filter((f) => f.estado === "pendiente_fondeo");
   const elegibles = opts.facturas.filter((f) => f.estado === "elegible");
   const cartera = opts.facturas.filter((f) => f.estado === "financiada");
@@ -22,9 +24,10 @@ export function bancoDashboard(opts: {
   const filaCola = (f: Factura) => {
     const proveedor = getEmpresa(f.proveedorId);
     const pagador = getEmpresa(f.pagadorId);
+    const esNueva = facturasNuevas.has(f.id);
     return `
-      <tr>
-        <td class="mono">${esc(f.numero)}</td>
+      <tr class="${esNueva ? "row-nuevo" : ""}">
+        <td class="mono">${esc(f.numero)}${esNueva ? '<span class="chip-nuevo">Nuevo</span>' : ""}</td>
         <td>${esc(pagador?.nombre) || "—"}</td>
         <td>${esc(proveedor?.nombre) || "—"}</td>
         <td>${formatDate(f.fechaVencimiento)}</td>
