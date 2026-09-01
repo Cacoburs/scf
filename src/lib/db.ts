@@ -58,7 +58,8 @@ db.exec(`
     montoNeto REAL NOT NULL,
     moneda TEXT NOT NULL,
     revisionManualL2 INTEGER,
-    bloqueadaAntifraude INTEGER
+    bloqueadaAntifraude INTEGER,
+    fechaFinanciacion TEXT
   );
 
   CREATE TABLE IF NOT EXISTS app_meta (
@@ -77,6 +78,18 @@ db.exec(`
   );
 `);
 
+// Migración: bases creadas antes de que existiera "fechaFinanciacion" no tienen
+// la columna todavía. La agregamos y le damos un valor razonable a lo que ya
+// estaba financiado o cobrado, para no perder la fecha de descuento de datos reales.
+const columnasFacturas = db.prepare("PRAGMA table_info(facturas)").all() as { name: string }[];
+if (!columnasFacturas.some((c) => c.name === "fechaFinanciacion")) {
+  db.exec("ALTER TABLE facturas ADD COLUMN fechaFinanciacion TEXT");
+  db.prepare(`
+    UPDATE facturas SET fechaFinanciacion = date(fechaEmision, '+2 days')
+    WHERE estado IN ('financiada', 'cobrada') AND fechaFinanciacion IS NULL
+  `).run();
+}
+
 // ---------------------------------------------------------------------------
 // Siembra inicial — solo corre la primera vez que se crea el archivo de base
 // de datos. Después de eso, todo lo que ve la demo es lo que quedó guardado
@@ -85,6 +98,14 @@ db.exec(`
 
 function costo(montoBruto: number, tasaAnual: number, dias: number): number {
   return Math.round(montoBruto - montoBruto * (tasaAnual / 100) * (dias / 365));
+}
+
+// La demo asume que el fondeo se aprueba a los pocos días de emitida la factura
+// (tiempo de conformidad + validación), no el mismo día.
+function addDias(fechaIso: string, dias: number): string {
+  const d = new Date(`${fechaIso}T00:00:00`);
+  d.setDate(d.getDate() + dias);
+  return d.toISOString().slice(0, 10);
 }
 
 export function ensureSeeded() {
@@ -173,8 +194,8 @@ export function ensureSeeded() {
 
   const insertFactura = db.prepare(`
     INSERT INTO facturas (id, numero, pagadorId, proveedorId, montoBruto, fechaEmision, fechaVencimiento,
-      estado, scoreRiesgo, tasaAnual, diasDescuento, montoNeto, moneda, revisionManualL2, bloqueadaAntifraude)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      estado, scoreRiesgo, tasaAnual, diasDescuento, montoNeto, moneda, revisionManualL2, bloqueadaAntifraude, fechaFinanciacion)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const facturasSeed: [string, string, string, string, number, string, string, string, number, number, number, string, boolean?, boolean?][] = [
     ["fac-0001", "FC-A-00041892", "pagador-agroexport", "proveedor-metalurgica", 18_500_000, "2026-07-20", "2026-09-18", "pendiente_fondeo", 91, 46.3, 58, "ARS"],
@@ -199,10 +220,11 @@ export function ensureSeeded() {
   ];
 
   for (const [id, numero, pagadorId, proveedorId, montoBruto, fechaEmision, fechaVencimiento, estado, scoreRiesgo, tasaAnual, diasDescuento, moneda, revisionManualL2, bloqueadaAntifraude] of facturasSeed) {
+    const fechaFinanciacion = ["financiada", "cobrada"].includes(estado) ? addDias(fechaEmision, 2) : null;
     insertFactura.run(
       id, numero, pagadorId, proveedorId, montoBruto, fechaEmision, fechaVencimiento, estado,
       scoreRiesgo, tasaAnual, diasDescuento, costo(montoBruto, tasaAnual, diasDescuento), moneda,
-      revisionManualL2 ? 1 : 0, bloqueadaAntifraude ? 1 : 0
+      revisionManualL2 ? 1 : 0, bloqueadaAntifraude ? 1 : 0, fechaFinanciacion
     );
   }
 }

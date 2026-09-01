@@ -5,7 +5,7 @@ import { getEmpresa } from "../lib/data.js";
 export function proveedorHistorialPage(opts: { user: User; facturas: Factura[] }): string {
   const cerradas = opts.facturas
     .filter((f) => ["cobrada", "rechazada"].includes(f.estado))
-    .sort((a, b) => b.fechaVencimiento.localeCompare(a.fechaVencimiento));
+    .sort((a, b) => (b.fechaFinanciacion ?? b.fechaVencimiento).localeCompare(a.fechaFinanciacion ?? a.fechaVencimiento));
 
   const cobradas = cerradas.filter((f) => f.estado === "cobrada");
   const rechazadas = cerradas.filter((f) => f.estado === "rechazada");
@@ -18,10 +18,10 @@ export function proveedorHistorialPage(opts: { user: User; facturas: Factura[] }
       <tr>
         <td class="mono">${esc(f.numero)}</td>
         <td>${esc(pagador?.nombre) || "—"}</td>
-        <td>${formatDate(f.fechaVencimiento)}</td>
+        <td>${f.fechaFinanciacion ? formatDate(f.fechaFinanciacion) : "—"}</td>
         <td class="num">${money(f.montoBruto, f.moneda)}</td>
-        <td class="num">${money(f.montoNeto, f.moneda)}</td>
         <td class="num">${f.tasaAnual.toFixed(1)}%</td>
+        <td class="num">${money(f.montoNeto, f.moneda)}</td>
         <td>${estadoPill(f.estado)}</td>
       </tr>`;
   };
@@ -62,8 +62,8 @@ export function proveedorHistorialPage(opts: { user: User; facturas: Factura[] }
           ? `<div class="empty-note">Todavía no tenés operaciones cerradas — van a aparecer acá una vez que se cobren o se rechacen.</div>`
           : `<table>
         <thead><tr>
-          <th>Factura</th><th>Pagador</th><th>Vencimiento</th>
-          <th class="num">Bruto</th><th class="num">Neto</th><th class="num">Tasa</th><th>Cierre</th>
+          <th>Factura</th><th>Pagador</th><th>Fecha de descuento</th>
+          <th class="num">Bruto</th><th class="num">Tasa (TNA)</th><th class="num">Monto transferido</th><th>Cierre</th>
         </tr></thead>
         <tbody>${cerradas.map(fila).join("")}</tbody>
       </table>`

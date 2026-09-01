@@ -52,6 +52,7 @@ function rowToFactura(row: any): Factura {
     diasDescuento: row.diasDescuento,
     montoNeto: row.montoNeto,
     moneda: row.moneda,
+    fechaFinanciacion: row.fechaFinanciacion ?? undefined,
     revisionManualL2: row.revisionManualL2 != null ? toBool(row.revisionManualL2) : undefined,
     bloqueadaAntifraude: row.bloqueadaAntifraude != null ? toBool(row.bloqueadaAntifraude) : undefined,
   };
@@ -201,7 +202,10 @@ export function actualizarEstadoFactura(id: string, estado: Factura["estado"]) {
   const f = facturas.find((x) => x.id === id);
   if (f) {
     f.estado = estado;
-    db.prepare("UPDATE facturas SET estado = ? WHERE id = ?").run(estado, id);
+    if (estado === "financiada" && !f.fechaFinanciacion) {
+      f.fechaFinanciacion = new Date().toISOString().slice(0, 10);
+    }
+    db.prepare("UPDATE facturas SET estado = ?, fechaFinanciacion = ? WHERE id = ?").run(estado, f.fechaFinanciacion ?? null, id);
   }
   return f;
 }

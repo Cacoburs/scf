@@ -5,7 +5,7 @@ import { getEmpresa } from "../lib/data.js";
 export function pagadorHistorialPage(opts: { user: User; facturas: Factura[] }): string {
   const cerradas = opts.facturas
     .filter((f) => ["cobrada", "rechazada"].includes(f.estado))
-    .sort((a, b) => b.fechaVencimiento.localeCompare(a.fechaVencimiento));
+    .sort((a, b) => (b.fechaFinanciacion ?? b.fechaVencimiento).localeCompare(a.fechaFinanciacion ?? a.fechaVencimiento));
 
   const cobradas = cerradas.filter((f) => f.estado === "cobrada");
   const rechazadas = cerradas.filter((f) => f.estado === "rechazada");
@@ -18,8 +18,9 @@ export function pagadorHistorialPage(opts: { user: User; facturas: Factura[] }):
       <tr>
         <td class="mono">${esc(f.numero)}</td>
         <td>${esc(proveedor?.nombre) || "—"}</td>
-        <td>${formatDate(f.fechaVencimiento)}</td>
+        <td>${f.fechaFinanciacion ? formatDate(f.fechaFinanciacion) : "—"}</td>
         <td class="num">${money(f.montoBruto, f.moneda)}</td>
+        <td class="num">${f.tasaAnual.toFixed(1)}%</td>
         <td class="num">${money(f.montoNeto, f.moneda)}</td>
         <td>${estadoPill(f.estado)}</td>
       </tr>`;
@@ -61,8 +62,8 @@ export function pagadorHistorialPage(opts: { user: User; facturas: Factura[] }):
           ? `<div class="empty-note">Todavía no hay facturas cerradas — van a aparecer acá una vez que se cobren o se rechacen.</div>`
           : `<table>
         <thead><tr>
-          <th>Factura</th><th>Proveedor</th><th>Vencimiento</th>
-          <th class="num">Bruto</th><th class="num">Neto</th><th>Cierre</th>
+          <th>Factura</th><th>Proveedor</th><th>Fecha de descuento</th>
+          <th class="num">Bruto</th><th class="num">Tasa (TNA)</th><th class="num">Monto transferido</th><th>Cierre</th>
         </tr></thead>
         <tbody>${cerradas.map(fila).join("")}</tbody>
       </table>`
@@ -70,7 +71,7 @@ export function pagadorHistorialPage(opts: { user: User; facturas: Factura[] }):
     </div>
 
     <p class="footnote">
-      Vista de demostración — YPF S.A. "Neto" es lo que cobró tu proveedor al descontar la factura, no lo que
+      Vista de demostración — YPF S.A. "Monto transferido" es lo que cobró tu proveedor al descontar la factura, no lo que
       vos pagás — vos siempre pagás el bruto al vencimiento, sin costo por el descuento.
     </p>
   `;

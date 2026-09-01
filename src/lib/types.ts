@@ -59,6 +59,7 @@ export interface Factura {
   diasDescuento: number;
   montoNeto: number;
   moneda: "ARS" | "USD";
+  fechaFinanciacion?: string; // fecha en la que el Fondo aprobó el fondeo (se descontó la factura)
 
   // --- Excepciones vistas desde el explorador maestro del Fondo ---
   revisionManualL2?: boolean;

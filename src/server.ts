@@ -497,17 +497,18 @@ const server = http.createServer(async (req, res) => {
       const session = requireRole(req, res, "banco");
       if (!session) return;
       const cerradas = facturas.filter((f) => ["cobrada", "rechazada"].includes(f.estado));
-      const header = "numero,pagador,proveedor,vencimiento,montoBruto,montoNeto,tasaAnual,estado\n";
+      const header = "numero,pagador,proveedor,fechaDescuento,vencimiento,montoBruto,tasaAnual,montoTransferido,estado\n";
       const rows = cerradas
         .map((f) =>
           [
             f.numero,
             getEmpresa(f.pagadorId)?.nombre ?? "",
             getEmpresa(f.proveedorId)?.nombre ?? "",
+            f.fechaFinanciacion ?? "",
             f.fechaVencimiento,
             f.montoBruto,
-            f.montoNeto,
             f.tasaAnual,
+            f.montoNeto,
             f.estado,
           ]
             .map((v) => `"${String(v).replace(/"/g, '""')}"`)
