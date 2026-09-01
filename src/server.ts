@@ -43,6 +43,9 @@ import { pagosProvider, firmaDigitalProvider, kycProvider, notificacionesProvide
 import { bancoMonitoreoPage } from "./templates/bancoMonitoreo.js";
 import { pagadorFacturasPage } from "./templates/pagadorFacturas.js";
 import { pagadorAltaFacturaPage } from "./templates/pagadorAltaFactura.js";
+import { bancoHistorialPage } from "./templates/bancoHistorial.js";
+import { pagadorHistorialPage } from "./templates/pagadorHistorial.js";
+import { proveedorHistorialPage } from "./templates/proveedorHistorial.js";
 import { landingPage } from "./templates/landing.js";
 import { loginPage } from "./templates/login.js";
 import { bancoDashboard } from "./templates/dashboardBanco.js";
@@ -481,6 +484,44 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // --- Banco · historial (libro mayor de operaciones cerradas) ---
+    if (pathname === "/banco/historial" && method === "GET") {
+      const session = requireRole(req, res, "banco");
+      if (!session) return;
+      const user = findUserByEmail("mesa@fondossa.com.ar")!;
+      send(res, 200, bancoHistorialPage({ user, facturas }));
+      return;
+    }
+
+    if (pathname === "/banco/historial/exportar.csv" && method === "GET") {
+      const session = requireRole(req, res, "banco");
+      if (!session) return;
+      const cerradas = facturas.filter((f) => ["cobrada", "rechazada"].includes(f.estado));
+      const header = "numero,pagador,proveedor,vencimiento,montoBruto,montoNeto,tasaAnual,estado\n";
+      const rows = cerradas
+        .map((f) =>
+          [
+            f.numero,
+            getEmpresa(f.pagadorId)?.nombre ?? "",
+            getEmpresa(f.proveedorId)?.nombre ?? "",
+            f.fechaVencimiento,
+            f.montoBruto,
+            f.montoNeto,
+            f.tasaAnual,
+            f.estado,
+          ]
+            .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+            .join(",")
+        )
+        .join("\n");
+      res.writeHead(200, {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": 'attachment; filename="historial-fondos-sa.csv"',
+      });
+      res.end(header + rows + "\n");
+      return;
+    }
+
     // --- Pagador portal ---
     if (pathname === "/pagador" && method === "GET") {
       const session = requireRole(req, res, "pagador");
@@ -574,6 +615,14 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (pathname === "/pagador/historial" && method === "GET") {
+      const session = requireRole(req, res, "pagador");
+      if (!session) return;
+      const user = findUserByEmail("finanzas@ypf.com.ar")!;
+      send(res, 200, pagadorHistorialPage({ user, facturas: facturasPorPagador(user.empresaId) }));
+      return;
+    }
+
     // --- Proveedor portal ---
     if (pathname === "/proveedor" && method === "GET") {
       const session = requireRole(req, res, "proveedor");
@@ -615,13 +664,20 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (pathname === "/proveedor/historial" && method === "GET") {
+      const session = requireRole(req, res, "proveedor");
+      if (!session) return;
+      const user = findUserByEmail("pagos@errazuriz.com.ar")!;
+      send(res, 200, proveedorHistorialPage({ user, facturas: facturasPorProveedor(user.empresaId) }));
+      return;
+    }
+
     // --- Stub pages (secondary nav items not built yet in this iteration) ---
     const STUBS: Record<string, { role: Role; title: string; empresa: string; userEmail: string }> = {
       "/banco/limites": { role: "banco", title: "Límites y política", empresa: "Fondos S.A.", userEmail: "mesa@fondossa.com.ar" },
       "/pagador/proveedores": { role: "pagador", title: "Proveedores", empresa: "YPF S.A.", userEmail: "finanzas@ypf.com.ar" },
       "/pagador/equipo": { role: "pagador", title: "Equipo y reglas", empresa: "YPF S.A.", userEmail: "finanzas@ypf.com.ar" },
       "/proveedor/facturas": { role: "proveedor", title: "Facturas elegibles", empresa: "Errázuriz S.A.", userEmail: "pagos@errazuriz.com.ar" },
-      "/proveedor/historial": { role: "proveedor", title: "Historial", empresa: "Errázuriz S.A.", userEmail: "pagos@errazuriz.com.ar" },
     };
     if (method === "GET" && STUBS[pathname]) {
       const stub = STUBS[pathname];
