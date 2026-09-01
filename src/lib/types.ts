@@ -61,6 +61,7 @@ export interface Factura {
   montoNeto: number;
   moneda: "ARS" | "USD";
   fechaFinanciacion?: string; // fecha en la que el Fondo aprobó el fondeo (se descontó la factura)
+  cae?: string; // Código de Autorización Electrónico (ARCA) — si se cargó a mano puede no tenerlo
 
   // --- Excepciones vistas desde el explorador maestro del Fondo ---
   revisionManualL2?: boolean;

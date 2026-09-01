@@ -54,6 +54,7 @@ function rowToFactura(row: any): Factura {
     montoNeto: row.montoNeto,
     moneda: row.moneda,
     fechaFinanciacion: row.fechaFinanciacion ?? undefined,
+    cae: row.cae ?? undefined,
     revisionManualL2: row.revisionManualL2 != null ? toBool(row.revisionManualL2) : undefined,
     bloqueadaAntifraude: row.bloqueadaAntifraude != null ? toBool(row.bloqueadaAntifraude) : undefined,
   };
@@ -168,6 +169,7 @@ export function crearFactura(opts: {
   montoBruto: number;
   fechaEmision: string;
   fechaVencimiento: string;
+  cae?: string;
 }): Factura {
   const diasDescuento = Math.max(1, diasEntreFechas(opts.fechaEmision, opts.fechaVencimiento));
   const tasaAnual = tasaSugeridaPagador(opts.pagadorId);
@@ -187,13 +189,14 @@ export function crearFactura(opts: {
     diasDescuento,
     montoNeto,
     moneda: "ARS",
+    cae: opts.cae || undefined,
   };
   facturas.push(f);
   db.prepare(`
     INSERT INTO facturas (id, numero, pagadorId, proveedorId, montoBruto, fechaEmision, fechaVencimiento,
-      estado, scoreRiesgo, tasaAnual, diasDescuento, montoNeto, moneda, revisionManualL2, bloqueadaAntifraude)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ARS', 0, 0)
-  `).run(f.id, f.numero, f.pagadorId, f.proveedorId, f.montoBruto, f.fechaEmision, f.fechaVencimiento, f.estado, f.scoreRiesgo, f.tasaAnual, f.diasDescuento, f.montoNeto);
+      estado, scoreRiesgo, tasaAnual, diasDescuento, montoNeto, moneda, revisionManualL2, bloqueadaAntifraude, cae)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ARS', 0, 0, ?)
+  `).run(f.id, f.numero, f.pagadorId, f.proveedorId, f.montoBruto, f.fechaEmision, f.fechaVencimiento, f.estado, f.scoreRiesgo, f.tasaAnual, f.diasDescuento, f.montoNeto, f.cae ?? null);
   return f;
 }
 

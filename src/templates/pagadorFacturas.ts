@@ -20,6 +20,7 @@ export function pagadorFacturasPage(opts: { user: User; facturas: Factura[]; toa
         <td>${formatDate(f.fechaEmision)}</td>
         <td>${formatDate(f.fechaVencimiento)}</td>
         <td class="num">${money(f.montoBruto, f.moneda)}</td>
+        <td class="mono">${esc(f.cae) || "—"}</td>
         <td>${estadoPill(f.estado)}</td>
       </tr>`;
   };
@@ -48,7 +49,7 @@ export function pagadorFacturasPage(opts: { user: User; facturas: Factura[]; toa
                 : 'Todavía no cargaste ninguna factura. Arrancá con "+ Cargar factura".'
             }</div>`
           : `<table>
-        <thead><tr><th>Factura</th><th>Proveedor</th><th>Emisión</th><th>Vencimiento</th><th class="num">Monto</th><th>Estado</th></tr></thead>
+        <thead><tr><th>Factura</th><th>Proveedor</th><th>Emisión</th><th>Vencimiento</th><th class="num">Monto</th><th>CAE</th><th>Estado</th></tr></thead>
         <tbody>${lista.map(fila).join("")}</tbody>
       </table>`
       }

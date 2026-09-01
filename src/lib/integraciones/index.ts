@@ -10,3 +10,4 @@ export * from "./firmaDigital.js";
 export * from "./kyc.js";
 export * from "./facturacionElectronica.js";
 export * from "./notificaciones.js";
+export * from "./extraccionDocumentos.js";

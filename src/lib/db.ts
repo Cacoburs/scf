@@ -60,7 +60,8 @@ db.exec(`
     moneda TEXT NOT NULL,
     revisionManualL2 INTEGER,
     bloqueadaAntifraude INTEGER,
-    fechaFinanciacion TEXT
+    fechaFinanciacion TEXT,
+    cae TEXT
   );
 
   CREATE TABLE IF NOT EXISTS app_meta (
@@ -95,6 +96,11 @@ if (!columnasFacturas.some((c) => c.name === "fechaFinanciacion")) {
 const columnasEmpresas = db.prepare("PRAGMA table_info(empresas)").all() as { name: string }[];
 if (!columnasEmpresas.some((c) => c.name === "tasaBase")) {
   db.exec("ALTER TABLE empresas ADD COLUMN tasaBase REAL");
+}
+
+// Migración: CAE (carga por archivo / import ARCA en "Cargar factura").
+if (!columnasFacturas.some((c) => c.name === "cae")) {
+  db.exec("ALTER TABLE facturas ADD COLUMN cae TEXT");
 }
 
 // ---------------------------------------------------------------------------

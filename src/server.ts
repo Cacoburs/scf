@@ -41,7 +41,14 @@ import {
   marcarNotificacionesVistas,
 } from "./lib/data.js";
 import { money } from "./templates/layout.js";
-import { pagosProvider, firmaDigitalProvider, kycProvider, notificacionesProvider } from "./lib/integraciones/index.js";
+import {
+  pagosProvider,
+  firmaDigitalProvider,
+  kycProvider,
+  notificacionesProvider,
+  facturacionElectronicaProvider,
+  extraccionDocumentosProvider,
+} from "./lib/integraciones/index.js";
 import { bancoMonitoreoPage } from "./templates/bancoMonitoreo.js";
 import { pagadorFacturasPage } from "./templates/pagadorFacturas.js";
 import { pagadorAltaFacturaPage } from "./templates/pagadorAltaFactura.js";
@@ -87,11 +94,83 @@ function redirect(res: http.ServerResponse, location: string, setCookie?: string
   res.end();
 }
 
+function soloDigitos(s: string): string {
+  return s.replace(/\D/g, "");
+}
+
 async function readBody(req: http.IncomingMessage): Promise<URLSearchParams> {
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(chunk as Buffer);
   const raw = Buffer.concat(chunks).toString("utf8");
   return new URLSearchParams(raw);
+}
+
+interface ArchivoSubido {
+  nombre: string;
+  tipo: string;
+  datos: Buffer;
+}
+
+// Parser mínimo de multipart/form-data (sin dependencias externas) — solo
+// para el caso de uso puntual de esta pantalla: campos de texto + un archivo.
+// No cubre casos raros (adjuntos anidados, transfer-encoding, etc.).
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+async function readMultipart(
+  req: http.IncomingMessage
+): Promise<{ campos: Record<string, string>; archivos: Record<string, ArchivoSubido> }> {
+  const contentType = req.headers["content-type"] ?? "";
+  const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/);
+  const boundary = boundaryMatch ? boundaryMatch[1] ?? boundaryMatch[2] : null;
+  const campos: Record<string, string> = {};
+  const archivos: Record<string, ArchivoSubido> = {};
+  if (!boundary) return { campos, archivos };
+
+  const chunks: Buffer[] = [];
+  let total = 0;
+  for await (const chunk of req) {
+    total += chunk.length;
+    if (total > MAX_UPLOAD_BYTES) throw new Error("El archivo supera el tamaño máximo permitido (10 MB).");
+    chunks.push(chunk as Buffer);
+  }
+  const body = Buffer.concat(chunks);
+  const boundaryBuf = Buffer.from(`--${boundary}`);
+
+  let start = body.indexOf(boundaryBuf);
+  while (start !== -1) {
+    const next = body.indexOf(boundaryBuf, start + boundaryBuf.length);
+    if (next === -1) break;
+    let partStart = start + boundaryBuf.length;
+    if (body.slice(partStart, partStart + 2).toString("ascii") === "--") break; // boundary final
+    if (body.slice(partStart, partStart + 2).toString("ascii") === "\r\n") partStart += 2;
+    let partEnd = next;
+    if (body.slice(partEnd - 2, partEnd).toString("ascii") === "\r\n") partEnd -= 2;
+
+    const part = body.subarray(partStart, partEnd);
+    const headerEnd = part.indexOf("\r\n\r\n");
+    if (headerEnd !== -1) {
+      const headerStr = part.slice(0, headerEnd).toString("utf8");
+      const data = part.subarray(headerEnd + 4);
+      const nameMatch = headerStr.match(/name="([^"]+)"/);
+      if (nameMatch) {
+        const filenameMatch = headerStr.match(/filename="([^"]*)"/);
+        if (filenameMatch) {
+          if (filenameMatch[1]) {
+            const typeMatch = headerStr.match(/Content-Type:\s*([^\r\n]+)/i);
+            archivos[nameMatch[1]] = {
+              nombre: filenameMatch[1],
+              tipo: typeMatch ? typeMatch[1] : "application/octet-stream",
+              datos: Buffer.from(data),
+            };
+          }
+        } else {
+          campos[nameMatch[1]] = data.toString("utf8");
+        }
+      }
+    }
+    start = next;
+  }
+  return { campos, archivos };
 }
 
 function serveStatic(req: http.IncomingMessage, res: http.ServerResponse, urlPath: string): boolean {
@@ -606,7 +685,35 @@ const server = http.createServer(async (req, res) => {
       const session = requireRole(req, res, "pagador");
       if (!session) return;
       const user = findUserByEmail("finanzas@ypf.com.ar")!;
-      send(res, 200, pagadorAltaFacturaPage({ user, proveedoresHabilitados: proveedoresDePagador(user.empresaId) }));
+      const proveedoresHabilitados = proveedoresDePagador(user.empresaId);
+      const cuitArca = url.searchParams.get("cuitArca")?.trim();
+
+      if (!cuitArca) {
+        send(res, 200, pagadorAltaFacturaPage({ user, proveedoresHabilitados, toast }));
+        return;
+      }
+
+      const resultado = await facturacionElectronicaProvider.buscarComprobantesRecibidos(cuitArca);
+      if (!resultado.ok || !resultado.datos) {
+        send(res, 200, pagadorAltaFacturaPage({ user, proveedoresHabilitados, toast, cuitArcaBuscado: cuitArca, errorArca: resultado.mensaje }));
+        return;
+      }
+      const cuitLimpio = soloDigitos(cuitArca);
+      const proveedorArca = proveedoresHabilitados.find((p) => soloDigitos(p.cuit) === cuitLimpio);
+      // Los que ya se importaron desaparecen de la lista — no tiene sentido volver a ofrecerlos.
+      const resultadosArca = resultado.datos.comprobantes.filter((c) => !existeNumeroFacturaParaPagador(user.empresaId, c.numero));
+      send(
+        res,
+        200,
+        pagadorAltaFacturaPage({
+          user,
+          proveedoresHabilitados,
+          toast,
+          cuitArcaBuscado: cuitArca,
+          resultadosArca,
+          proveedorArca,
+        })
+      );
       return;
     }
 
@@ -621,9 +728,10 @@ const server = http.createServer(async (req, res) => {
       const montoBruto = Number(montoBrutoRaw);
       const fechaEmision = (body.get("fechaEmision") ?? "").trim();
       const fechaVencimiento = (body.get("fechaVencimiento") ?? "").trim();
+      const cae = (body.get("cae") ?? "").trim();
 
       const proveedoresHabilitados = proveedoresDePagador(user.empresaId);
-      const values = { proveedorId, numero, montoBruto: montoBrutoRaw, fechaEmision, fechaVencimiento };
+      const values = { proveedorId, numero, montoBruto: montoBrutoRaw, fechaEmision, fechaVencimiento, cae };
       const conError = (error: string) => {
         send(res, 400, pagadorAltaFacturaPage({ user, proveedoresHabilitados, values, error }));
       };
@@ -653,8 +761,109 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      const factura = crearFactura({ numero, pagadorId: user.empresaId, proveedorId, montoBruto, fechaEmision, fechaVencimiento });
+      const factura = crearFactura({ numero, pagadorId: user.empresaId, proveedorId, montoBruto, fechaEmision, fechaVencimiento, cae });
       redirect(res, `/pagador?toast=${encodeURIComponent(`Factura ${factura.numero} cargada — ya está pendiente de tu conformidad.`)}`);
+      return;
+    }
+
+    if (pathname === "/pagador/facturas/nueva/extraer" && method === "POST") {
+      const session = requireRole(req, res, "pagador");
+      if (!session) return;
+      const user = findUserByEmail("finanzas@ypf.com.ar")!;
+      const proveedoresHabilitados = proveedoresDePagador(user.empresaId);
+
+      let campos: Record<string, string>;
+      let archivos: Record<string, ArchivoSubido>;
+      try {
+        ({ campos, archivos } = await readMultipart(req));
+      } catch (e) {
+        send(res, 400, pagadorAltaFacturaPage({ user, proveedoresHabilitados, error: e instanceof Error ? e.message : "No se pudo leer el archivo." }));
+        return;
+      }
+
+      const archivo = archivos["archivo"];
+      const valoresPrevios = {
+        proveedorId: campos["proveedorId"],
+        numero: campos["numero"],
+        montoBruto: campos["montoBruto"],
+        fechaEmision: campos["fechaEmision"],
+        fechaVencimiento: campos["fechaVencimiento"],
+        cae: campos["cae"],
+      };
+      if (!archivo) {
+        send(res, 400, pagadorAltaFacturaPage({ user, proveedoresHabilitados, values: valoresPrevios, error: "Elegí un archivo antes de extraer." }));
+        return;
+      }
+
+      const resultado = await extraccionDocumentosProvider.extraerDeArchivo(archivo.nombre, archivo.datos);
+      if (!resultado.ok || !resultado.datos) {
+        send(res, 400, pagadorAltaFacturaPage({ user, proveedoresHabilitados, values: valoresPrevios, error: resultado.mensaje }));
+        return;
+      }
+
+      send(
+        res,
+        200,
+        pagadorAltaFacturaPage({
+          user,
+          proveedoresHabilitados,
+          notaExtraccion: resultado.mensaje,
+          values: {
+            proveedorId: valoresPrevios.proveedorId,
+            numero: resultado.datos.numero,
+            montoBruto: String(resultado.datos.montoBruto),
+            fechaEmision: resultado.datos.fechaEmision,
+            fechaVencimiento: resultado.datos.fechaVencimiento,
+            cae: resultado.datos.cae,
+          },
+        })
+      );
+      return;
+    }
+
+    if (pathname === "/pagador/facturas/nueva/arca-importar" && method === "POST") {
+      const session = requireRole(req, res, "pagador");
+      if (!session) return;
+      const body = await readBody(req);
+      const user = findUserByEmail("finanzas@ypf.com.ar")!;
+      const proveedoresHabilitados = proveedoresDePagador(user.empresaId);
+      const cuitArca = (body.get("cuitArca") ?? "").trim();
+      const modo = body.get("modo") ?? "seleccionadas";
+      const seleccionadas = new Set(body.getAll("seleccionadas"));
+
+      const cuitLimpio = soloDigitos(cuitArca);
+      const proveedorArca = proveedoresHabilitados.find((p) => soloDigitos(p.cuit) === cuitLimpio);
+      const resultado = await facturacionElectronicaProvider.buscarComprobantesRecibidos(cuitArca);
+
+      if (!proveedorArca || !resultado.ok || !resultado.datos) {
+        redirect(res, `/pagador/facturas/nueva?cuitArca=${encodeURIComponent(cuitArca)}&toast=${encodeURIComponent("No se pudo importar — repetí la búsqueda.")}`);
+        return;
+      }
+
+      const aImportar = resultado.datos.comprobantes.filter((c) => modo === "todas" || seleccionadas.has(c.numero));
+      let creadas = 0;
+      let yaExistian = 0;
+      for (const c of aImportar) {
+        if (existeNumeroFacturaParaPagador(user.empresaId, c.numero)) {
+          yaExistian++;
+          continue;
+        }
+        crearFactura({
+          numero: c.numero,
+          pagadorId: user.empresaId,
+          proveedorId: proveedorArca.id,
+          montoBruto: c.montoBruto,
+          fechaEmision: c.fechaEmision,
+          fechaVencimiento: c.fechaVencimiento,
+          cae: c.cae,
+        });
+        creadas++;
+      }
+      const msg =
+        creadas === 0
+          ? "No se importó ninguna factura nueva — ya estaban todas cargadas."
+          : `Se importaron ${creadas} factura${creadas === 1 ? "" : "s"} desde ARCA.${yaExistian > 0 ? ` ${yaExistian} ya estaban cargadas y se omitieron.` : ""}`;
+      redirect(res, `/pagador/facturas/nueva?cuitArca=${encodeURIComponent(cuitArca)}&toast=${encodeURIComponent(msg)}`);
       return;
     }
 

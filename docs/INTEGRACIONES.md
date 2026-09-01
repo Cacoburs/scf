@@ -1,6 +1,6 @@
 # Integraciones externas — qué está listo y qué falta pedir
 
-Este documento explica, sin código, los cinco puntos donde la plataforma va a
+Este documento explica, sin código, los seis puntos donde la plataforma va a
 necesitar conectarse con un servicio de un tercero para dejar de ser una demo
 y pasar a mover información y plata real. Para cada uno: qué hace hoy (en
 modo simulado), qué haría en producción, y qué hay que conseguir antes de
@@ -77,24 +77,50 @@ prolijidad.
 
 ## 4. Factura electrónica (ARCA, ex AFIP) — `src/lib/integraciones/facturacionElectronica.ts`
 
-**Qué hace hoy:** existe la pieza, pero **todavía no está conectada a ninguna
-pantalla** — porque la pantalla donde un pagador cargaría sus facturas propias
-(por CSV o conectada a su sistema contable) tampoco está construida todavía.
-Es el primer enchufe que se va a usar cuando se construya esa pantalla.
+**Qué hace hoy:** ya está conectada al botón "Buscar en ARCA" de la pantalla
+"Cargar factura" del pagador. Cuando se busca un CUIT, devuelve una lista de
+comprobantes **inventados pero estables** (el mismo CUIT siempre trae los
+mismos comprobantes) — no hay ninguna consulta real a ARCA todavía.
 
-**Qué haría en producción:** antes de aceptar una factura al circuito de
-descuento, chequear contra ARCA que esa factura exista de verdad, que el CAE
-(Código de Autorización Electrónico) esté vigente, y que los datos coincidan.
-Esto es clave para evitar el fraude de facturas truchas o duplicadas.
+**Qué haría en producción:** consultar contra ARCA los comprobantes que un
+CUIT emitió de verdad (servicio de "Comprobantes en línea" o WSFE), y por
+separado, antes de aceptar una factura al circuito de descuento, chequear que
+el CAE (Código de Autorización Electrónico) esté vigente y que los datos
+coincidan. Esto es clave para evitar el fraude de facturas truchas o
+duplicadas.
 
 **Qué hay que conseguir antes de activarlo:**
 - Acceso a los servicios web de ARCA para facturación electrónica.
-- El certificado y la clave fiscal de cada pagador que va a cargar facturas
-  (cada empresa tiene que autorizar esto en su propia cuenta ARCA).
+- El certificado y la clave fiscal de cada pagador que va a consultar
+  comprobantes (cada empresa tiene que autorizar esto en su propia cuenta
+  ARCA — esto lo tramita el pagador, no es algo que resolvamos con código).
 
 ---
 
-## 5. Notificaciones (email / SMS) — `src/lib/integraciones/notificaciones.ts`
+## 5. Extracción de datos de archivos — `src/lib/integraciones/extraccionDocumentos.ts`
+
+**Qué hace hoy:** conectada al botón "Extraer datos del archivo" de "Cargar
+factura". Cuando se sube un PDF o una foto, "lee" el archivo y completa
+número, fechas, monto y CAE — pero es una simulación: no hay ningún OCR ni
+modelo leyendo el documento de verdad, los valores salen de una fórmula
+determinística a partir del contenido del archivo (el mismo archivo siempre
+da los mismos datos, para que la demo se sienta consistente).
+
+**Qué haría en producción:** leer el archivo de verdad con un servicio de OCR
+o de "document AI" y devolver los campos que efectivamente encuentre —
+incluyendo la posibilidad de que no encuentre todo, o se equivoque, cosa que
+la demo no contempla.
+
+**Qué hay que conseguir antes de activarlo:**
+- Un proveedor de OCR/document AI (puede ser un modelo con visión de
+  propósito general, o uno especializado en comprobantes argentinos).
+- Contrato comercial + API key de ese proveedor.
+- Definir qué hacer cuando la extracción viene incompleta o dudosa — hoy no
+  hay ningún manejo de ese caso porque la simulación nunca falla a medias.
+
+---
+
+## 6. Notificaciones (email / SMS) — `src/lib/integraciones/notificaciones.ts`
 
 **Qué hace hoy:** cuando pasa algo relevante (se aprueba un fondeo, un
 proveedor pide un anticipo), esta pieza solo escribe un mensaje en los logs
@@ -124,6 +150,7 @@ el fondeo, o avisarle al Fondo que llegó una solicitud nueva.
 | Firma digital | AFIP o un proveedor de firma electrónica | Acceso a servicios web / cuenta + API key |
 | KYC/KYB | Un proveedor de verificación de identidad | Contrato + API key |
 | Factura electrónica | ARCA (directo, es un organismo público) | Acceso a servicios web de facturación electrónica |
+| Extracción de archivos | Un proveedor de OCR/document AI | Contrato + API key |
 | Notificaciones | Un proveedor de email/SMS | Cuenta + API key + dominio verificado |
 
 Ninguna de estas conexiones está activada todavía — la plataforma sigue
